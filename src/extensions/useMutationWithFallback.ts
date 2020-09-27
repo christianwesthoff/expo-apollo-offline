@@ -95,7 +95,7 @@ export function useMutationWithFallback<
             },
             {},
           ]
-        : undefined) as MutationTuple<TData, TVariables>,
+        : {}) as MutationTuple<TData, TVariables>,
     memo
   );
 
