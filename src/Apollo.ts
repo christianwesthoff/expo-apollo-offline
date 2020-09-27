@@ -1,6 +1,5 @@
 import {
   HttpLink,
-  InMemoryCache,
   NormalizedCacheObject,
   ApolloClient,
   ApolloLink,
@@ -12,6 +11,7 @@ import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
 import { AsyncStorage } from "react-native";
 import { onError } from "@apollo/link-error";
 import { RetryLink } from "@apollo/link-retry";
+import { InMemoryCache1 } from "./extensions/inMemoryCache";
 
 const host = "https://emerging-crayfish-72.hasura.app/v1/graphql";
 const wshost = "wss://emerging-crayfish-72.hasura.app/v1/graphql";
@@ -58,7 +58,7 @@ const link = new RetryLink({ attempts: { max: Infinity } }).split(
   httpLink
 );
 
-const cache = new InMemoryCache();
+const cache = new InMemoryCache1();
 
 const getStorage = () =>
   (window !== undefined && window.localStorage

@@ -39,8 +39,7 @@ export default function useSubscriptionWithFallback<
         context,
         setResult: (params: any) => {
           setSubscriptionResult(params);
-          console.log("NEW DATA");
-          syncSubscriptionRef.current = false;
+          // syncSubscriptionRef.current = false;
         },
       });
     }
@@ -54,31 +53,8 @@ export default function useSubscriptionWithFallback<
   useEffect(() => subscriptionData.afterExecute());
   useEffect(() => subscriptionData.cleanup.bind(subscriptionData), []);
 
-  const syncSubscriptionRef = useRef<boolean>(false);
-
-  const query = changeDocumentType(subscription, "query");
-
-  function syncSubscription() {
-    if (!syncSubscriptionRef.current && context?.client?.cache) {
-      const data = context.client.cache.readQuery({
-        query,
-        variables: options?.variables,
-        id: "ROOT_SUBSCRIPTION",
-      });
-      context.client.cache.writeQuery({
-        query,
-        variables: options?.variables,
-        id: "ROOT_QUERY",
-        data,
-      });
-      syncSubscriptionRef.current = true;
-    }
-    return syncSubscriptionRef.current;
-  }
-
-  syncSubscription();
-
   const [tick, forceUpdate] = useReducer((x) => x + 1, 0);
+  const query = changeDocumentType(subscription, "query");
   const queryOptions = options
     ? { ...options, query, fetchPolicy: "cache-only" }
     : { query, fetchPolicy: "cache-only" };

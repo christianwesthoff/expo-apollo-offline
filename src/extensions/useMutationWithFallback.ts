@@ -10,7 +10,7 @@ import { MutationData } from "@apollo/client/react/data";
 import { useDeepMemo } from "@apollo/client/react/hooks/utils/useDeepMemo";
 import { DocumentNode } from "graphql";
 import { useContext, useState, useRef, useEffect } from "react";
-import { changeDocumentType } from "./graphql-utils";
+import { changeDocumentType, getDocumentType } from "./graphql-utils";
 
 export type OfflineMutationOptions<
   TData = any,
@@ -68,6 +68,7 @@ export function useMutationWithFallback<
         ? [
             (options: MutationFunctionOptions<any, any>) => {
               // TODO: push to queue
+              const originDocumentType = getDocumentType(offlineOptions.query);
               const query = changeDocumentType(offlineOptions.query, "query");
               const fromCache = context.client!.cache.readQuery<TData>(
                 {
@@ -86,11 +87,13 @@ export function useMutationWithFallback<
                 data,
                 broadcast: true,
               });
-              context.client!.writeQuery({
-                id: "ROOT_SUBSCRIPTION",
-                query,
-                data,
-              });
+              // if (originDocumentType === "subscription") {
+              //   context.client!.writeQuery({
+              //     id: "ROOT_SUBSCRIPTION",
+              //     query,
+              //     data,
+              //   });
+              // }
               return Promise.resolve({});
             },
             {},
