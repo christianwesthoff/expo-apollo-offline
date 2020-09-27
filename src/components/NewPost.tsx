@@ -1,13 +1,8 @@
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { TextInput } from "react-native";
 import { v4 as uuidv4 } from "uuid";
-import {
-  getApolloContext,
-  gql,
-  InMemoryCache,
-  useMutation,
-} from "@apollo/client";
-import { useMutationWithFallback } from "../useMutationWithFallback";
+import { gql } from "@apollo/client";
+import { useMutationWithFallback } from "../extensions/useMutationWithFallback";
 
 const ADD_POST = gql`
   mutation addPost($text: String!) {

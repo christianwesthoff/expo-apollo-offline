@@ -2,7 +2,7 @@ import React from "react";
 import { FlatList, Text } from "react-native";
 
 import { gql } from "@apollo/client";
-import useSubscriptionWithFallback from "../useSubscriptionWithFallback";
+import useSubscriptionWithFallback from "../extensions/useSubscriptionWithFallback";
 
 export const QUERY_POSTS = gql`
   subscription queryPosts {
