@@ -120,3 +120,6 @@ dist
 *~
 *.swp
 .expo
+
+# jest
+__snapshots__
