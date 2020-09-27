@@ -39,7 +39,6 @@ export default function useSubscriptionWithFallback<
         context,
         setResult: (params: any) => {
           setSubscriptionResult(params);
-          // syncSubscriptionRef.current = false;
         },
       });
     }
