@@ -1,41 +1,27 @@
-import React, { useState } from 'react';
-import {
-  Platform,
-  StatusBar,
-  StyleSheet,
-  View,
-} from 'react-native';
+import React, { useState } from "react";
+import { Platform, StatusBar, StyleSheet, View } from "react-native";
 
-import { AppLoading } from 'expo';
-import { Asset } from 'expo-asset';
-import * as Font from 'expo-font';
+import { AppLoading } from "expo";
+import { Asset } from "expo-asset";
+import * as Font from "expo-font";
 
-import {
-  ApolloClient,
-  ApolloProvider,
-  InMemoryCache,
-  // HttpLink,
-  ApolloLink,
-} from '@apollo/client';
+import { ApolloProvider } from "@apollo/client";
 
-import { NavigationNativeContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
 
-import HomeScreen from './screens/HomeScreen';
-import AboutScreen from './screens/AboutScreen';
+import "react-native-get-random-values";
+import HomeScreen from "./screens/HomeScreen";
+import AboutScreen from "./screens/AboutScreen";
 
-import { mockedLink } from './mock';
+import { createApolloClient, waitOnCache } from "./Apollo";
 
-const client = new ApolloClient({
-  cache: new InMemoryCache(),
-  link: mockedLink as unknown as ApolloLink, // new HttpLink('...'),
-});
-
+const client = createApolloClient();
 const Stack = createStackNavigator();
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     flex: 1,
   },
 });
@@ -55,6 +41,7 @@ const App: React.FC<Props> = ({ skipLoadingScreen }) => {
       Font.loadAsync({
         // ...
       }),
+      waitOnCache,
     ]);
   };
 
@@ -77,15 +64,15 @@ const App: React.FC<Props> = ({ skipLoadingScreen }) => {
   }
   return (
     <ApolloProvider client={client}>
-      <NavigationNativeContainer>
+      <NavigationContainer>
         <View style={styles.container}>
-          {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
+          {Platform.OS === "ios" && <StatusBar barStyle="default" />}
           <Stack.Navigator>
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="About" component={AboutScreen} />
           </Stack.Navigator>
         </View>
-      </NavigationNativeContainer>
+      </NavigationContainer>
     </ApolloProvider>
   );
 };

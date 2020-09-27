@@ -1,15 +1,16 @@
-import React from 'react';
-import { FlatList, Text } from 'react-native';
+import React from "react";
+import { FlatList, Text } from "react-native";
 
-import { gql, useQuery } from '@apollo/client';
+import { gql } from "@apollo/client";
+import useSubscriptionWithFallback from "../useSubscriptionWithFallback";
 
-const QUERY_POSTS = gql`
-query queryPosts {
-  posts {
-    id
-    text
+export const QUERY_POSTS = gql`
+  subscription queryPosts {
+    posts {
+      id
+      text
+    }
   }
-}
 `;
 
 type Data = {
@@ -19,10 +20,10 @@ type Data = {
   }[];
 };
 
-const PostList = () => {
-  const { loading, error, data } = useQuery<Data>(QUERY_POSTS);
-  if (loading) return <Text>Loading...</Text>;
-  if (error) return <Text>Error:{error}</Text>;
+const PostList: React.FC<{ mode: boolean }> = ({ mode }) => {
+  const { data } = useSubscriptionWithFallback<Data>(QUERY_POSTS, {}, mode);
+  // if (loading) return <Text>Loading...</Text>;
+  // if (error) return <Text>Error:{error}</Text>;
   if (!data) return <Text>No Data</Text>;
   return (
     <FlatList
