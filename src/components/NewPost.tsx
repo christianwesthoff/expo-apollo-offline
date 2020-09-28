@@ -1,18 +1,22 @@
 import React, { useState } from "react";
 import { TextInput } from "react-native";
 import { v4 as uuidv4 } from "uuid";
-import { useMutationWithFallback } from "../extensions/useMutationWithFallback";
+import { useOfflineMutation } from "../extensions/useOfflineMutation";
 import { ADD_POST, QUERY_POSTS } from "./operations";
 
-const NewPost: React.FC<{ mode: boolean }> = ({ mode }) => {
-  const [addPost] = useMutationWithFallback(ADD_POST, {}, mode, {
-    query: QUERY_POSTS,
-    offlineUpdate: (data, variables) => ({
-      posts: [
-        ...data.posts,
-        { __typename: "posts", id: uuidv4(), text: variables.text },
-      ],
-    }),
+const NewPost: React.FC = () => {
+  const [addPost] = useOfflineMutation(ADD_POST, {
+    offlineUpdate: [
+      {
+        query: QUERY_POSTS,
+        updateQuery: (data, variables) => ({
+          posts: [
+            ...(data?.posts || []),
+            { __typename: "posts", id: uuidv4(), text: variables?.text },
+          ],
+        }),
+      },
+    ],
   });
   const [text, setText] = useState("");
 

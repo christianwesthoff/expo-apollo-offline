@@ -1,4 +1,9 @@
-import { HttpLink, NormalizedCacheObject, ApolloLink } from "@apollo/client";
+import {
+  HttpLink,
+  NormalizedCacheObject,
+  ApolloLink,
+  InMemoryCache,
+} from "@apollo/client";
 import { WebSocketLink } from "@apollo/client/link/ws";
 import { getMainDefinition } from "@apollo/client/utilities";
 import { persistCache as persistedApolloCache } from "apollo-cache-persist";
@@ -6,7 +11,6 @@ import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
 import { AsyncStorage } from "react-native";
 import { onError } from "@apollo/link-error";
 import { RetryLink } from "@apollo/link-retry";
-import { InMemoryCache1 } from "./extensions/inMemoryCache";
 import { ApolloClient1, MutationQueue } from "./extensions/apolloClient";
 import persistedMutationQueue from "./extensions/persistedMutationQueue";
 
@@ -56,7 +60,7 @@ const link = new RetryLink({ attempts: { max: Infinity } }).split(
   httpLink
 );
 
-const cache = new InMemoryCache1();
+const cache = new InMemoryCache();
 const mutationQueue = new MutationQueue();
 const getStorage = () =>
   (window !== undefined && window.localStorage

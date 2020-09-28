@@ -1,7 +1,6 @@
 import React from "react";
 import { FlatList, Text } from "react-native";
-
-import useSubscriptionWithFallback from "../extensions/useSubscriptionWithFallback";
+import { useOfflineSubscription } from "../extensions/useOfflineSubscription";
 import { QUERY_POSTS } from "./operations";
 
 type Data = {
@@ -11,17 +10,19 @@ type Data = {
   }[];
 };
 
-const PostList: React.FC<{ mode: boolean }> = ({ mode }) => {
-  const { data } = useSubscriptionWithFallback<Data>(QUERY_POSTS, {}, mode);
+const PostList: React.FC = () => {
+  const { data } = useOfflineSubscription<Data>(QUERY_POSTS);
   // if (loading) return <Text>Loading...</Text>;
   // if (error) return <Text>Error:{error}</Text>;
   if (!data) return <Text>No Data</Text>;
   return (
-    <FlatList
-      data={data.posts}
-      keyExtractor={(item) => String(item.id)}
-      renderItem={({ item }) => <Text>{item.text}</Text>}
-    />
+    <>
+      <FlatList
+        data={data.posts}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => <Text>{item.text}</Text>}
+      />
+    </>
   );
 };
 
