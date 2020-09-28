@@ -41,39 +41,39 @@ export function useOfflineMutation<
     ) => Promise<FetchResult<TData>>
   >(
     (options) => {
-      if (memoedOptions?.offlineUpdate?.length) {
-        memoedOptions.offlineUpdate.forEach(({ query, updateQuery }) => {
-          let sourceQuery = query;
-          const isSubscription = getDocumentType(query) === "subscription";
-          if (isSubscription) {
-            sourceQuery = changeDocumentType(query, "query");
-          }
-          const fromCache = context.client!.cache.readQuery<TData>(
-            {
-              query: sourceQuery,
-              id: "ROOT_QUERY",
-            },
-            true
-          );
-          const data = updateQuery(
-            fromCache ?? ({} as TData),
-            options!.variables
-          );
-          context.client!.cache.writeQuery({
-            id: "ROOT_QUERY",
+      memoedOptions?.offlineUpdate?.forEach(({ query, updateQuery }) => {
+        const isSubscription = getDocumentType(query) === "subscription";
+        let sourceQuery;
+        if (isSubscription) {
+          sourceQuery = changeDocumentType(query, "query");
+        } else {
+          sourceQuery = query;
+        }
+        const fromCache = context.client?.cache.readQuery<TData>(
+          {
             query: sourceQuery,
-            data,
-            broadcast: true,
-          });
-          if (isSubscription) {
-            context.client!.cache.writeQuery({
-              id: "ROOT_SUBSCRIPTION",
-              query,
-              data,
-            });
-          }
+            id: "ROOT_QUERY",
+          },
+          true
+        );
+        const data = updateQuery(
+          fromCache ?? ({} as TData),
+          options?.variables
+        );
+        context.client?.cache.writeQuery({
+          id: "ROOT_QUERY",
+          query: sourceQuery,
+          data,
+          broadcast: true,
         });
-      }
+        if (isSubscription) {
+          context.client?.cache.writeQuery({
+            id: "ROOT_SUBSCRIPTION",
+            query,
+            data,
+          });
+        }
+      });
       return fetchResult(options);
     },
     [fetchResult, memoedOptions]
