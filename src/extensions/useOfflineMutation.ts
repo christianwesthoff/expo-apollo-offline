@@ -64,13 +64,13 @@ export function useOfflineMutation<
           data,
           broadcast: true,
         });
-        if (isSubscription) {
-          context.client?.cache.writeQuery({
-            id: "ROOT_SUBSCRIPTION",
-            query,
-            data,
-          });
-        }
+        // if (isSubscription) {
+        //   context.client?.cache.writeQuery({
+        //     id: "ROOT_SUBSCRIPTION",
+        //     query,
+        //     data,
+        //   });
+        // }
       });
       return fetchResult(options1);
     },
