@@ -1,27 +1,24 @@
 import {
-  HttpLink,
   NormalizedCacheObject,
   ApolloLink,
   InMemoryCache,
+  ApolloClient,
 } from "@apollo/client";
 import { WebSocketLink } from "@apollo/client/link/ws";
-import { getMainDefinition } from "@apollo/client/utilities";
+// import { getMainDefinition } from "@apollo/client/utilities";
 import { persistCache as persistedApolloCache } from "apollo-cache-persist";
 import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
 import { AsyncStorage } from "react-native";
 import { onError } from "@apollo/link-error";
 import { RetryLink } from "@apollo/link-retry";
-import { ApolloClient1, MutationQueue } from "./extensions/apolloClient";
-import persistedMutationQueue from "./extensions/persistedMutationQueue";
-
 const endpoint = "emerging-crayfish-72.hasura.app/v1";
-const host = `https://${endpoint}/graphql`;
+// const host = `https://${endpoint}/graphql`;
 const wshost = `wss://${endpoint}/graphql`;
 
-const httpLink = new HttpLink({
-  uri: host,
-  credentials: "include",
-});
+// const httpLink = new HttpLink({
+//   uri: host,
+//   credentials: "include",
+// });
 
 // Create a WebSocket link:
 const wsLink = new WebSocketLink({
@@ -50,18 +47,22 @@ const errorLink = onError(({ response, graphQLErrors, networkError }) => {
 
 // using the ability to split links, you can send data to each link
 // depending on what kind of operation is being sent
-const link = new RetryLink({ attempts: { max: Infinity } }).split(
-  // split based on operation type
-  ({ query }) => {
-    const { kind, operation } = getMainDefinition(query) as any;
-    return kind === "OperationDefinition" && operation === "subscription";
-  },
-  wsLink,
-  httpLink
+// const link = new RetryLink({ attempts: { max: Infinity } }).split(
+//   // split based on operation type
+//   ({ query }) => {
+//     const { kind, operation } = getMainDefinition(query) as any;
+//     return kind === "OperationDefinition" && operation === "subscription";
+//   },
+//   wsLink,
+//   httpLink
+// );
+
+const link = ApolloLink.concat(
+  new RetryLink({ attempts: { max: Infinity } }),
+  wsLink
 );
 
 const cache = new InMemoryCache();
-const mutationQueue = new MutationQueue();
 const getStorage = () =>
   (window !== undefined && window.localStorage
     ? window.localStorage
@@ -74,18 +75,10 @@ export const waitOnCache = Promise.all([
     maxSize: false,
     debug: true,
   }),
-  persistedMutationQueue({
-    cache: mutationQueue as any,
-    storage: getStorage() as any,
-    maxSize: false,
-    debug: true,
-    key: "apollo-mutation-persist",
-  }),
 ]);
 
 export const createApolloClient = () =>
-  new ApolloClient1({
+  new ApolloClient({
     link: ApolloLink.from([errorLink, link]),
     cache,
-    mutationQueue: new MutationQueue(),
   });

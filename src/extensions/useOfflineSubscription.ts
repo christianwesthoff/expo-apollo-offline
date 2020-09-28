@@ -29,7 +29,6 @@ export function useOfflineSubscription<
       variables: variables,
       updateQuery: (prev, { subscriptionData }) => {
         const { data } = subscriptionData;
-        console.log({ data, prev });
         return data ? { ...data } : prev;
       },
     });
