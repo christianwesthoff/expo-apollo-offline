@@ -14,7 +14,7 @@ const PostList: React.FC = () => {
   const { data } = useOfflineSubscription<Data>(QUERY_POSTS);
   // if (loading) return <Text>Loading...</Text>;
   // if (error) return <Text>Error:{error}</Text>;
-  if (!data) return <Text>No Data</Text>;
+  if (!data || !data.posts || !data.posts.length) return <Text>No Data</Text>;
   return (
     <>
       <FlatList

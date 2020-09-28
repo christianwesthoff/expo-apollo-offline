@@ -11,7 +11,6 @@ import {
 import { useCallback, useContext } from "react";
 import { DocumentNode } from "graphql";
 import { changeDocumentType, getDocumentType } from "./graphql-utils";
-import { useDeepMemo } from "@apollo/client/react/hooks/utils/useDeepMemo";
 
 export type OfflineMutationHookOptions<
   TData = any,
@@ -34,14 +33,13 @@ export function useOfflineMutation<
 ): MutationTuple<TData, TVariables> {
   const context = useContext(getApolloContext());
   const [fetchResult, mutationResult] = useMutation(mutation, options);
-  const memoedOptions = useDeepMemo(() => options, options);
   const offlineFetchResult = useCallback<
     (
-      options?: MutationFunctionOptions<TData, TVariables>
+      options1?: MutationFunctionOptions<TData, TVariables>
     ) => Promise<FetchResult<TData>>
   >(
-    (options) => {
-      memoedOptions?.offlineUpdate?.forEach(({ query, updateQuery }) => {
+    (options1) => {
+      options?.offlineUpdate?.forEach(({ query, updateQuery }) => {
         const isSubscription = getDocumentType(query) === "subscription";
         let sourceQuery;
         if (isSubscription) {
@@ -58,7 +56,7 @@ export function useOfflineMutation<
         );
         const data = updateQuery(
           fromCache ?? ({} as TData),
-          options?.variables
+          options1?.variables
         );
         context.client?.cache.writeQuery({
           id: "ROOT_QUERY",
@@ -74,9 +72,9 @@ export function useOfflineMutation<
           });
         }
       });
-      return fetchResult(options);
+      return fetchResult(options1);
     },
-    [fetchResult, memoedOptions]
+    [fetchResult, options]
   );
   return [offlineFetchResult, mutationResult];
 }
