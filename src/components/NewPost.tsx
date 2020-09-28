@@ -1,28 +1,11 @@
 import React, { useState } from "react";
 import { TextInput } from "react-native";
 import { v4 as uuidv4 } from "uuid";
-import { gql } from "@apollo/client";
 import { useMutationWithFallback } from "../extensions/useMutationWithFallback";
-
-const ADD_POST = gql`
-  mutation addPost($text: String!) {
-    insert_posts(objects: { text: $text }) {
-      affected_rows
-    }
-  }
-`;
-
-export const QUERY_POSTS = gql`
-  subscription queryPosts {
-    posts {
-      id
-      text
-    }
-  }
-`;
+import { ADD_POST, QUERY_POSTS } from "./operations";
 
 const NewPost: React.FC<{ mode: boolean }> = ({ mode }) => {
-  const [addPost] = useMutationWithFallback(ADD_POST, undefined, mode, {
+  const [addPost] = useMutationWithFallback(ADD_POST, {}, mode, {
     query: QUERY_POSTS,
     offlineUpdate: (data, variables) => ({
       posts: [
@@ -42,7 +25,7 @@ const NewPost: React.FC<{ mode: boolean }> = ({ mode }) => {
   return (
     <TextInput
       style={{ height: 40, borderColor: "gray", borderWidth: 1 }}
-      placeholder="Enter text..."
+      placeholder="Search"
       onSubmitEditing={onSubmit}
       onChangeText={setText}
       value={text}

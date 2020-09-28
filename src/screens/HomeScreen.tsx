@@ -18,7 +18,7 @@ type Props = {
 };
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
-  const [mode, setMode] = useState(true);
+  const [mode, setMode] = useState(false);
   return (
     <View style={styles.container}>
       <Button onPress={() => navigation.navigate("About")} title="Show About" />

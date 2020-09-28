@@ -10,7 +10,14 @@ import {
 import { QueryData, SubscriptionData } from "@apollo/client/react/data";
 import { useDeepMemo } from "@apollo/client/react/hooks/utils/useDeepMemo";
 import { DocumentNode } from "graphql";
-import { useContext, useState, useRef, useEffect, useReducer } from "react";
+import {
+  useContext,
+  useState,
+  useRef,
+  useEffect,
+  useReducer,
+  useMemo,
+} from "react";
 import { changeDocumentType } from "./graphql-utils";
 
 export default function useSubscriptionWithFallback<
@@ -22,11 +29,11 @@ export default function useSubscriptionWithFallback<
   offline: boolean = false
 ) {
   const context = useContext(getApolloContext());
-  const subscriptionOptions = options
+  const updatedSubscriptionOptions = options
     ? { ...options, subscription }
     : { subscription };
   const [subscriptionResult, setSubscriptionResult] = useState({
-    loading: !subscriptionOptions.skip,
+    loading: !updatedSubscriptionOptions.skip,
     error: undefined,
     data: undefined,
   });
@@ -35,7 +42,7 @@ export default function useSubscriptionWithFallback<
   function getSubscriptionDataRef() {
     if (!subscriptionDataRef.current) {
       subscriptionDataRef.current = new SubscriptionData<TData, TVariables>({
-        options: subscriptionOptions,
+        options: updatedSubscriptionOptions,
         context,
         setResult: (params: any) => {
           setSubscriptionResult(params);
@@ -46,15 +53,17 @@ export default function useSubscriptionWithFallback<
   }
 
   const subscriptionData = getSubscriptionDataRef();
-  subscriptionData.setOptions(subscriptionOptions, true);
+  subscriptionData.setOptions(updatedSubscriptionOptions, true);
   subscriptionData.context = context;
 
   useEffect(() => subscriptionData.afterExecute());
   useEffect(() => subscriptionData.cleanup.bind(subscriptionData), []);
 
   const [tick, forceUpdate] = useReducer((x) => x + 1, 0);
-  const query = changeDocumentType(subscription, "query");
-  const queryOptions = options
+  const query = useMemo(() => changeDocumentType(subscription, "query"), [
+    subscription,
+  ]);
+  const updatedQueryOptions = options
     ? { ...options, query, fetchPolicy: "cache-only" }
     : { query, fetchPolicy: "cache-only" };
 
@@ -62,14 +71,14 @@ export default function useSubscriptionWithFallback<
   const queryData =
     queryDataRef.current ||
     new QueryData<TData, TVariables>({
-      options: queryOptions as QueryDataOptions<TData, TVariables>,
+      options: updatedQueryOptions as QueryDataOptions<TData, TVariables>,
       context,
       onNewData() {
         forceUpdate();
       },
     });
 
-  queryData.setOptions(queryOptions);
+  queryData.setOptions(updatedQueryOptions);
   queryData.context = context;
 
   // `onError` and `onCompleted` callback functions will not always have a
@@ -77,7 +86,7 @@ export default function useSubscriptionWithFallback<
   // prevent `afterExecute` from being triggered un-necessarily.
   const memo = {
     options: {
-      ...queryOptions,
+      ...updatedQueryOptions,
       onError: undefined,
       onCompleted: undefined,
     } as QueryHookOptions<TData, TVariables>,
@@ -103,7 +112,10 @@ export default function useSubscriptionWithFallback<
 
   useEffect(() => queryData.afterExecute(), [queryResult.data]);
 
-  if (!offline) return subscriptionData.execute(subscriptionResult);
+  if (!offline) {
+    const nextSubscriptionResult = subscriptionData.execute(subscriptionResult);
+    return nextSubscriptionResult.data ? nextSubscriptionResult : queryResult;
+  }
 
   return queryResult;
 }

@@ -5,11 +5,13 @@ import {
   MutationTuple,
   getApolloContext,
   MutationFunctionOptions,
+  NormalizedCacheObject,
 } from "@apollo/client";
 import { MutationData } from "@apollo/client/react/data";
 import { useDeepMemo } from "@apollo/client/react/hooks/utils/useDeepMemo";
 import { DocumentNode } from "graphql";
 import { useContext, useState, useRef, useEffect } from "react";
+import { ApolloClient1 } from "./apolloClient";
 import { changeDocumentType } from "./graphql-utils";
 
 export type OfflineMutationOptions<
@@ -67,7 +69,13 @@ export function useMutationWithFallback<
       (offline && offlineOptions
         ? [
             (options: MutationFunctionOptions<any, any>) => {
-              // TODO: push to queue
+              (context.client! as ApolloClient1<
+                NormalizedCacheObject
+              >)?.mutationQueue.write({
+                ...updatedOptions,
+                variables: options.variables,
+              });
+
               const query = changeDocumentType(offlineOptions.query, "query");
               const fromCache = context.client!.cache.readQuery<TData>(
                 {
@@ -94,7 +102,9 @@ export function useMutationWithFallback<
     memo
   );
 
-  if (!offline) return mutationData.execute(result);
+  if (!offline) {
+    return mutationData.execute(result);
+  }
 
   return cacheMutation;
 }

@@ -9,3 +9,16 @@ export class InMemoryCache1 extends InMemoryCache {
     return result;
   }
 }
+
+// export default <T>({ cache }: any) => (
+// ) => {
+//   const write = cache.write;
+//   cache.write = (...args: any[]) => {
+//     const ref = write.apply(cache, args);
+//     return ref;
+//   };
+
+//   return () => {
+//     cache.write = write;
+//   };
+// };

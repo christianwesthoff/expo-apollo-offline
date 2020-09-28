@@ -1,20 +1,18 @@
-import {
-  HttpLink,
-  NormalizedCacheObject,
-  ApolloClient,
-  ApolloLink,
-} from "@apollo/client";
+import { HttpLink, NormalizedCacheObject, ApolloLink } from "@apollo/client";
 import { WebSocketLink } from "@apollo/client/link/ws";
 import { getMainDefinition } from "@apollo/client/utilities";
-import { persistCache } from "apollo-cache-persist";
+import { persistCache as persistedApolloCache } from "apollo-cache-persist";
 import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
 import { AsyncStorage } from "react-native";
 import { onError } from "@apollo/link-error";
 import { RetryLink } from "@apollo/link-retry";
 import { InMemoryCache1 } from "./extensions/inMemoryCache";
+import { ApolloClient1, MutationQueue } from "./extensions/apolloClient";
+import persistedMutationQueue from "./extensions/persistedMutationQueue";
 
-const host = "https://emerging-crayfish-72.hasura.app/v1/graphql";
-const wshost = "wss://emerging-crayfish-72.hasura.app/v1/graphql";
+const endpoint = "emerging-crayfish-72.hasura.app/v1";
+const host = `https://${endpoint}/graphql`;
+const wshost = `wss://${endpoint}/graphql`;
 
 const httpLink = new HttpLink({
   uri: host,
@@ -59,21 +57,31 @@ const link = new RetryLink({ attempts: { max: Infinity } }).split(
 );
 
 const cache = new InMemoryCache1();
-
+const mutationQueue = new MutationQueue();
 const getStorage = () =>
   (window !== undefined && window.localStorage
     ? window.localStorage
     : AsyncStorage) as PersistentStorage<PersistedData<NormalizedCacheObject>>;
 
-export const waitOnCache = persistCache({
-  cache,
-  storage: getStorage(),
-  maxSize: false,
-  debug: true,
-});
+export const waitOnCache = Promise.all([
+  persistedApolloCache({
+    cache,
+    storage: getStorage(),
+    maxSize: false,
+    debug: true,
+  }),
+  persistedMutationQueue({
+    cache: mutationQueue as any,
+    storage: getStorage() as any,
+    maxSize: false,
+    debug: true,
+    key: "apollo-mutation-persist",
+  }),
+]);
 
 export const createApolloClient = () =>
-  new ApolloClient({
+  new ApolloClient1({
     link: ApolloLink.from([errorLink, link]),
     cache,
+    mutationQueue: new MutationQueue(),
   });
