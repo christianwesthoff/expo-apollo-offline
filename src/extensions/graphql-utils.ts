@@ -6,7 +6,7 @@ export function changeDocumentType(
   type: OperationTypeNode
 ) {
   const docType = getDocumentType(document);
-  const query = document.loc?.source.body.replace(docType, type);
+  const query = document.loc?.source.body.replace(new RegExp(docType), type);
   return gql`
     ${query}
   `;
