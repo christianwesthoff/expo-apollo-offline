@@ -1,17 +1,28 @@
 import { gql } from "@apollo/client";
+import { getMainDefinition } from "@apollo/client/utilities";
 import { DocumentNode, OperationTypeNode } from "graphql";
+
+export function getDocumentBody(document: DocumentNode) {
+  return document.loc?.source?.body;
+}
+
+export function getDocumentType(document: DocumentNode) {
+  const { kind, operation } = getMainDefinition(document) as any;
+  return kind === "OperationDefinition"
+    ? (operation as OperationTypeNode)
+    : undefined;
+}
 
 export function changeDocumentType(
   document: DocumentNode,
   type: OperationTypeNode
 ) {
   const docType = getDocumentType(document);
-  const query = document.loc?.source.body.replace(new RegExp(docType), type);
+  if (!docType) return undefined;
+  const queryString = getDocumentBody(document);
+  if (!queryString) return undefined;
+  const newQueryString = queryString.replace(new RegExp(docType), type);
   return gql`
-    ${query}
+    ${newQueryString}
   `;
-}
-
-export function getDocumentType(document: DocumentNode) {
-  return (document.definitions[0] as any)["operation"] as OperationTypeNode;
 }

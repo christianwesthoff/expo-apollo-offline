@@ -43,7 +43,7 @@ export function useOfflineMutation<
         const isSubscription = getDocumentType(query) === "subscription";
         let sourceQuery;
         if (isSubscription) {
-          sourceQuery = changeDocumentType(query, "query");
+          sourceQuery = changeDocumentType(query, "query")!;
         } else {
           sourceQuery = query;
         }

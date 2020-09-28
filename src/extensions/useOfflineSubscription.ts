@@ -15,7 +15,7 @@ export function useOfflineSubscription<
   subscription: DocumentNode | TypedDocumentNode<TData, TVariables>,
   options?: SubscriptionHookOptions<TData, TVariables>
 ) {
-  const query = useMemo(() => changeDocumentType(subscription, "query"), [
+  const query = useMemo(() => changeDocumentType(subscription, "query")!, [
     subscription,
   ]);
   const useQueryResult = useQuery(query, {
