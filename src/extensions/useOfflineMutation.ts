@@ -19,7 +19,7 @@ export type OfflineMutationHookOptions<
   offlineUpdate?: [
     {
       query: DocumentNode;
-      updateQuery: (data: TData, variables?: TVariables) => TData;
+      updateQuery: (data: any, variables?: TVariables) => any;
     }
   ];
 };
