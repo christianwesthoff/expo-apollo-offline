@@ -177,7 +177,7 @@ class PersistorAdapter<T> {
 
       this.log.info(
         typeof data === "string"
-          ? `Persisted object of size ${data.length} characters`
+          ? `Persisted object of size ${data.length}`
           : "Persisted object"
       );
     } catch (error) {
@@ -195,7 +195,7 @@ class PersistorAdapter<T> {
 
         this.log.info(
           typeof data === "string"
-            ? `Restored object of size ${data.length} characters`
+            ? `Restored object of size ${data.length}`
             : "Restored object"
         );
       } else {
@@ -308,7 +308,7 @@ export class Storage<T> {
   }
 
   async read(): Promise<PersistedData<T>> {
-    return this.storage.getItem(this.key);
+    return await this.storage.getItem(this.key);
   }
 
   async write(data: PersistedData<T>): Promise<void> {
@@ -333,19 +333,19 @@ export class Storage<T> {
 export class Log<T> {
   debug: boolean;
   lines: Array<LogLine>;
-  name: string;
+  key: string;
   static buffer = 30;
 
   constructor(options: PersistorOptions<T>) {
-    const { debug = false, key: name } = options;
-    this.name = name;
+    const { debug = false, key } = options;
+    this.key = key;
     this.debug = debug;
     this.lines = [];
   }
 
   emit(level: LogLevel, message: any[]): void {
     if (level in console) {
-      console[level](`[${name}] `, ...message);
+      console[level](`[${this.key}]`, ...message);
     }
   }
 

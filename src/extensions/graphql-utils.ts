@@ -13,9 +13,9 @@ export function getDocumentType(document: DocumentNode) {
     : undefined;
 }
 
-export function compileQuery(query: string) {
+export function compileDocument(document: string) {
   return gql`
-    ${query}
+    ${document}
   `;
 }
 
@@ -25,8 +25,11 @@ export function changeDocumentType(
 ) {
   const docType = getDocumentType(document);
   if (!docType) return undefined;
-  const queryString = getDocumentBody(document);
-  if (!queryString) return undefined;
-  const newQueryString = queryString.replace(new RegExp(docType), type);
-  return compileQuery(newQueryString);
+  const docString = getDocumentBody(document);
+  if (!docString) return undefined;
+  const newDocString = docString.replace(
+    new RegExp(` ${docType} `),
+    ` ${type} `
+  );
+  return compileDocument(newDocString);
 }

@@ -59,6 +59,7 @@ export class RetryableOperationManager {
       return;
     }
     this.queue.push(operation);
+    this.write();
     this.start();
   }
 
@@ -70,8 +71,13 @@ export class RetryableOperationManager {
     const index = this.queue.indexOf(operation);
     if (index < 0) return;
     this.queue.splice(index, 1);
+    this.write();
     if (index !== 0) return;
     this.continue();
+  }
+
+  public write() {
+    // Empty
   }
 
   /**
@@ -86,9 +92,10 @@ export class RetryableOperationManager {
   /**
    * Reset manager to inital state.
    */
-  public reset() {
+  private reset() {
     if (this.timerId) clearTimeout(this.timerId);
     this.queue = [];
+    this.write();
     this.timerId = undefined;
     this.running = false;
     this.retryCount = 1;

@@ -14,7 +14,7 @@ import "react-native-get-random-values";
 import HomeScreen from "./screens/HomeScreen";
 import AboutScreen from "./screens/AboutScreen";
 
-import { createApolloClient, waitOnCache } from "./Apollo";
+import { createApolloClient, initApolloClient } from "./Apollo";
 
 const client = createApolloClient();
 const Stack = createStackNavigator();
@@ -41,7 +41,7 @@ const App: React.FC<Props> = ({ skipLoadingScreen }) => {
       Font.loadAsync({
         // ...
       }),
-      waitOnCache,
+      initApolloClient(client),
     ]);
   };
 
