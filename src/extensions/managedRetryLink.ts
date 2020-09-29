@@ -36,7 +36,6 @@ export interface DelayFunction {
 class RetryableOperationManager {
   private timerId: number | undefined;
   private queue: RetryableOperation<any>[] = [];
-  // private currentOperation: RetryableOperation<any> | undefined;
   private running = false;
   private retryCount = 0;
 
@@ -58,7 +57,6 @@ class RetryableOperationManager {
 
   public start() {
     if (this.timerId || this.running) return;
-    // this.reset();
     this.running = true;
     this.continue();
   }
@@ -79,7 +77,6 @@ class RetryableOperationManager {
   }
 
   private reset() {
-    // this.currentOperation = undefined;
     this.queue = [];
     this.timerId = undefined;
     this.running = false;
@@ -92,16 +89,19 @@ class RetryableOperationManager {
 
   private scheduleRetry(delay: number) {
     if (this.timerId) {
-      throw new Error(`[RetryManager] Encountered overlapping retries`);
+      throw new Error(
+        `[RetryableOperationManager] Encountered overlapping retries`
+      );
     }
 
     this.timerId = (setTimeout(() => {
-      // this.currentOperation = undefined;
       this.timerId = undefined;
       this.retryCount++;
       this.continue();
     }, delay) as any) as number;
-    console.log("[RetryManager] Trigger in ", delay, this.retryCount);
+    console.debug(
+      `[RetryableOperationManager] Retrigger in ${delay} (retry: ${this.retryCount})`
+    );
   }
 }
 
