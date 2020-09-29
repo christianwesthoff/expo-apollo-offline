@@ -28,12 +28,12 @@ export type TriggerUninstallFunction = () => void;
 
 export interface TriggerConfig<T> {
   log: Log<T>;
-  persistor: Persistor1<T>;
+  persistor: PersistorAdapter<T>;
 }
 
 class Trigger<T> {
   debounce: number;
-  persistor: Persistor1<T>;
+  persistor: PersistorAdapter<T>;
   paused: boolean;
   timeout: any;
   uninstall?: TriggerUninstallFunction;
@@ -93,7 +93,7 @@ class Trigger<T> {
   };
 }
 
-class Persistable1<T> {
+class PersistableAdapter<T> {
   source: Persistable<T>;
   serialize: boolean;
 
@@ -127,13 +127,13 @@ class Persistable1<T> {
 
 interface PersistorConfig<T> {
   log: Log<T>;
-  source: Persistable1<T>;
+  source: PersistableAdapter<T>;
   storage: Storage<T>;
 }
 
-class Persistor1<T> {
+class PersistorAdapter<T> {
   log: Log<T>;
-  source: Persistable1<T>;
+  source: PersistableAdapter<T>;
   storage: Storage<T>;
   maxSize?: number;
   paused: boolean;
@@ -220,9 +220,9 @@ class Persistor1<T> {
 
 export class Persistor<T> {
   log: Log<T>;
-  source: Persistable1<T>;
+  source: PersistableAdapter<T>;
   storage: Storage<T>;
-  persistor: Persistor1<T>;
+  persistor: PersistorAdapter<T>;
   trigger: Trigger<T>;
 
   constructor(options: PersistorOptions<T>) {
@@ -235,9 +235,9 @@ export class Persistor<T> {
     }
 
     const log = new Log(options);
-    const source = new Persistable1(options);
+    const source = new PersistableAdapter(options);
     const storage = new Storage(options);
-    const persistor = new Persistor1({ log, source, storage }, options);
+    const persistor = new PersistorAdapter({ log, source, storage }, options);
     const trigger = new Trigger({ log, persistor }, options);
 
     this.log = log;

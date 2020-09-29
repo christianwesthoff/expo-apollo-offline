@@ -1,7 +1,11 @@
 import { ApolloClient, NormalizedCacheObject } from "@apollo/client";
 import { PersistentStorage } from "apollo-cache-persist/types";
 import { PersistedData, Persistable, Persistor } from "./cache";
-import { compileQuery, getDocumentBody } from "./graphql-utils";
+import {
+  compileQuery,
+  getDocumentBody,
+  getDocumentType,
+} from "./graphql-utils";
 import {
   ManagedRetryLink,
   RetryableOperationManager,
@@ -29,7 +33,7 @@ const delayInBetween = 200;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-class MutationRestore implements Persistable<PersistedOperationQueue> {
+class OperationRestore implements Persistable<PersistedOperationQueue> {
   constructor(
     private manager: RetryableOperationManager,
     private apolloClient: ApolloClient<NormalizedCacheObject>
@@ -47,17 +51,34 @@ class MutationRestore implements Persistable<PersistedOperationQueue> {
     if (!data || !data.length) return;
     const persistedMutationPromises = Promise.all(
       data.map(({ operation }, index) => async () => {
-        const mutation = compileQuery(operation.query);
-        this.apolloClient.mutate({ mutation, variables: operation.variables });
+        await wait(index * delayInBetween);
+        const query = compileQuery(operation.query);
+        const docType = getDocumentType(query);
+        switch (docType) {
+          case "mutation":
+            this.apolloClient.mutate({
+              mutation: query,
+              variables: operation.variables,
+            });
+            break;
+          case "query":
+            this.apolloClient.query({ query, variables: operation.variables });
+            break;
+          case "subscription":
+            this.apolloClient.subscribe({
+              query,
+              variables: operation.variables,
+            });
+            break;
+        }
         // We don't want to chain the requests; maybe can successfully execute without each other so we just wait
-        return await wait((index + 1) * delayInBetween);
       })
     );
     setTimeout(persistedMutationPromises, initalDelay);
   }
 }
 
-export default async function persistFailedMutations({
+export default async function persistFailedOperations({
   link,
   client,
   ...options
@@ -66,7 +87,7 @@ export default async function persistFailedMutations({
   const persistor = new Persistor({
     key: "apollo-mutation-queue",
     ...options,
-    source: new MutationRestore(manager, client),
+    source: new OperationRestore(manager, client),
     trigger: (trigger) =>
       registerListeners(manager, ["push", "remove", "reset"], trigger),
   });

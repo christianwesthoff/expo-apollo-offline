@@ -20,10 +20,10 @@ const registerListeners = <T>(
   fnNames: (keyof T)[],
   onExecute: () => void
 ) => {
-  const refs = fnNames.map((fnName) =>
+  const unrefs = fnNames.map((fnName) =>
     registerListener(caller, fnName, onExecute)
   );
   return () => {
-    refs.forEach((ref) => ref());
+    unrefs.forEach((unref) => unref());
   };
 };
