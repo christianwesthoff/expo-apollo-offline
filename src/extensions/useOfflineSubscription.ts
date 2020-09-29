@@ -20,6 +20,7 @@ export function useOfflineSubscription<
   ]);
   const useQueryResult = useQuery(query, {
     ...options,
+    fetchPolicy: "cache-only",
   });
   const { subscribeToMore } = useQueryResult;
   const variables = options?.variables;

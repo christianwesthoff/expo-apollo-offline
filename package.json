@@ -22,6 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "@apollo/client": "^3.2.1",
+    "@apollo/link-context": "^2.0.0-beta.3",
     "@apollo/link-error": "^2.0.0-beta.3",
     "@apollo/link-retry": "^2.0.0-beta.3",
     "@react-native-community/masked-view": "0.1.10",
