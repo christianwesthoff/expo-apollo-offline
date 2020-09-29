@@ -1,4 +1,4 @@
-import { ApolloClient, NormalizedCacheObject, Operation } from "@apollo/client";
+import { ApolloClient, NormalizedCacheObject } from "@apollo/client";
 import { PersistentStorage } from "apollo-cache-persist/types";
 import { PersistedData, Persistable, Persistor } from "./cache";
 import { compileQuery, getDocumentBody } from "./graphql-utils";
@@ -31,7 +31,7 @@ const delayInBetween = 200;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-class OfflineAdapter implements Persistable<PersistedOperationQueue> {
+class MutationRestore implements Persistable<PersistedOperationQueue> {
   constructor(
     private manager: RetryableOperationManager,
     private apolloClient: ApolloClient<NormalizedCacheObject>
@@ -67,7 +67,7 @@ export default async function persistFailedMutations({
   const manager = (link as any)["manager"] as RetryableOperationManager;
   const persistor = new Persistor({
     ...options,
-    source: new OfflineAdapter(manager, client),
+    source: new MutationRestore(manager, client),
     trigger: (trigger) =>
       registerListeners(manager, ["push", "remove", "reset"], trigger),
   });
