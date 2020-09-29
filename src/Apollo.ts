@@ -59,7 +59,6 @@ const managedRetryLink = new ManagedRetryLink({
 // using the ability to split links, you can send data to each link
 // depending on what kind of operation is being sent
 const link = ApolloLink.split(
-  // split based on operation type
   ({ query }) => {
     const { kind, operation } = getMainDefinition(query) as any;
     return kind === "OperationDefinition" && operation === "subscription";
@@ -122,4 +121,5 @@ export const createApolloClient = () =>
   new ApolloClient({
     link: ApolloLink.from([errorLink, link]),
     cache,
+    defaultOptions: {},
   });

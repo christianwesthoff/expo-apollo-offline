@@ -37,19 +37,27 @@ export interface DelayFunction {
  * Global retry operation manager which perists the original order of operations sent through the link.
  * Based on @apollo/link-retry.
  */
-class RetryableOperationManager {
+export class RetryableOperationManager {
   private timerId: number | undefined;
   private queue: RetryableOperation<any>[] = [];
   private running = false;
-  private retryCount = 0;
+  private retryCount = 1;
 
   constructor(private delayFn: DelayFunction) {}
+
+  public getQueue() {
+    return this.queue;
+  }
 
   /**
    * Push operation to queue.
    * @param operation RetryableOperation<any>
    */
   public push(operation: RetryableOperation<any>) {
+    if (this.queue.includes(operation)) {
+      this.retry();
+      return;
+    }
     this.queue.push(operation);
     this.start();
   }
@@ -72,16 +80,14 @@ class RetryableOperationManager {
   public start() {
     if (this.timerId || this.running) return;
     this.running = true;
-    this.continue();
+    this.retry();
   }
 
   /**
    * Reset manager to inital state.
    */
-  private reset() {
-    if (this.timerId) {
-      clearTimeout(this.timerId);
-    }
+  public reset() {
+    if (this.timerId) clearTimeout(this.timerId);
     this.queue = [];
     this.timerId = undefined;
     this.running = false;
@@ -116,11 +122,7 @@ class RetryableOperationManager {
   }
 
   private scheduleRetry(delay: number) {
-    if (this.timerId) {
-      throw new Error(
-        `[RetryableOperationManagerError] Encountered overlapping retries.`
-      );
-    }
+    if (this.timerId) return;
 
     this.timerId = (setTimeout(() => {
       this.timerId = undefined;
@@ -150,11 +152,16 @@ class RetryableOperation<TValue = any> {
     private manager: RetryableOperationManager,
     private operation: Operation,
     private nextLink: NextLink,
-    private retryIf: RetryFunction
+    private retryIf: RetryFunction,
+    private timestamp: Date
   ) {}
 
-  public extract(): Operation {
+  public getOperation(): Operation {
     return this.operation;
+  }
+
+  public getTimestamp(): Date {
+    return this.timestamp;
   }
 
   /**
@@ -263,7 +270,7 @@ class RetryableOperation<TValue = any> {
       error
     );
     if (shouldRetry) {
-      this.manager.retry();
+      this.manager.push(this);
       return;
     }
 
@@ -310,9 +317,11 @@ export class ManagedRetryLink extends ApolloLink {
       this.manager,
       operation,
       nextLink,
-      this.retryIf
+      this.retryIf,
+      new Date()
     );
-    this.manager.push(retryable);
+    retryable.start();
+    // this.manager.push(retryable);
 
     return new Observable((observer) => {
       retryable.subscribe(observer);

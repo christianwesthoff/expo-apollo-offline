@@ -13,6 +13,12 @@ export function getDocumentType(document: DocumentNode) {
     : undefined;
 }
 
+export function compileQuery(query: string) {
+  return gql`
+    ${query}
+  `;
+}
+
 export function changeDocumentType(
   document: DocumentNode,
   type: OperationTypeNode
@@ -22,7 +28,5 @@ export function changeDocumentType(
   const queryString = getDocumentBody(document);
   if (!queryString) return undefined;
   const newQueryString = queryString.replace(new RegExp(docType), type);
-  return gql`
-    ${newQueryString}
-  `;
+  return compileQuery(newQueryString);
 }
