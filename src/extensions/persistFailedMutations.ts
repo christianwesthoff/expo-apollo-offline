@@ -1,6 +1,6 @@
 import { ApolloClient, NormalizedCacheObject } from "@apollo/client";
 import { PersistentStorage } from "apollo-cache-persist/types";
-import { PersistedData, Persistable, Persistor } from "./cache";
+import { PersistedData, Persistable, Persistor, TriggerFn } from "./cache";
 import { compileQuery, getDocumentBody } from "./graphql-utils";
 import {
   ManagedRetryLink,
@@ -19,8 +19,6 @@ export interface PersistRetryLinkOptions {
   link: ManagedRetryLink;
   storage: PersistentStorage<PersistedData<PersistedOperationQueue>>;
   debounce?: number;
-  trigger?: (fn: () => void) => () => void;
-  key: string;
   serialize?: boolean;
   maxSize?: number | false;
   debug?: boolean;
@@ -66,6 +64,7 @@ export default async function persistFailedMutations({
 }: PersistRetryLinkOptions) {
   const manager = (link as any)["manager"] as RetryableOperationManager;
   const persistor = new Persistor({
+    key: "apollo-mutation-queue",
     ...options,
     source: new MutationRestore(manager, client),
     trigger: (trigger) =>

@@ -2,11 +2,13 @@ import { PersistentStorage } from "apollo-cache-persist/types";
 
 export type PersistedData<T> = T | string | null;
 
-export interface PersistOptions<T> {
+export type TriggerFn = (fn: () => void) => () => void;
+
+export interface PersistorOptions<T> {
   source: Persistable<T>;
   storage: PersistentStorage<PersistedData<T>>;
   debounce?: number;
-  trigger?: (fn: () => void) => () => void;
+  trigger?: TriggerFn;
   key: string;
   serialize?: boolean;
   maxSize?: number | false;
@@ -38,7 +40,7 @@ class Trigger<T> {
 
   static defaultDebounce = 1000;
 
-  constructor({ persistor }: TriggerConfig<T>, options: PersistOptions<T>) {
+  constructor({ persistor }: TriggerConfig<T>, options: PersistorOptions<T>) {
     const { defaultDebounce } = Trigger;
     const { debounce, trigger } = options;
 
@@ -95,7 +97,7 @@ class Persistable1<T> {
   source: Persistable<T>;
   serialize: boolean;
 
-  constructor(options: PersistOptions<T>) {
+  constructor(options: PersistorOptions<T>) {
     const { source, serialize = true } = options;
 
     this.source = source;
@@ -138,7 +140,7 @@ class Persistor1<T> {
 
   constructor(
     { log, source, storage }: PersistorConfig<T>,
-    options: PersistOptions<T>
+    options: PersistorOptions<T>
   ) {
     const { maxSize = 1024 * 1024 } = options;
 
@@ -223,7 +225,7 @@ export class Persistor<T> {
   persistor: Persistor1<T>;
   trigger: Trigger<T>;
 
-  constructor(options: PersistOptions<T>) {
+  constructor(options: PersistorOptions<T>) {
     if (!options.source) {
       throw new Error("No source passed");
     }
@@ -298,7 +300,7 @@ export class Storage<T> {
   storage: PersistentStorage<PersistedData<T>>;
   key: string;
 
-  constructor(options: PersistOptions<T>) {
+  constructor(options: PersistorOptions<T>) {
     const { storage, key } = options;
 
     this.storage = storage;
@@ -331,21 +333,19 @@ export class Storage<T> {
 export class Log<T> {
   debug: boolean;
   lines: Array<LogLine>;
-
+  name: string;
   static buffer = 30;
-  static prefix = "[apollo-source-persist]";
 
-  constructor(options: PersistOptions<T>) {
-    const { debug = false } = options;
-
+  constructor(options: PersistorOptions<T>) {
+    const { debug = false, key: name } = options;
+    this.name = name;
     this.debug = debug;
     this.lines = [];
   }
 
   emit(level: LogLevel, message: any[]): void {
     if (level in console) {
-      const { prefix } = Log;
-      console[level](prefix, ...message);
+      console[level](`[${name}] `, ...message);
     }
   }
 
