@@ -33,6 +33,10 @@ export interface DelayFunction {
   (count: number): number;
 }
 
+/**
+ * Global retry operation manager which perists the original order of operations sent through the link.
+ * Based on @apollo/link-retry.
+ */
 class RetryableOperationManager {
   private timerId: number | undefined;
   private queue: RetryableOperation<any>[] = [];
@@ -41,36 +45,39 @@ class RetryableOperationManager {
 
   constructor(private delayFn: DelayFunction) {}
 
+  /**
+   * Push operation to queue.
+   * @param operation RetryableOperation<any>
+   */
   public push(operation: RetryableOperation<any>) {
     this.queue.push(operation);
+    this.start();
   }
 
+  /**
+   * Remove operation from queue.
+   * @param operation RetryableOperation<any>
+   */
   public remove(operation: RetryableOperation<any>) {
     const index = this.queue.indexOf(operation);
     if (index < 0) return;
     this.queue.splice(index, 1);
+    if (index !== 0) return;
+    this.continue();
   }
 
+  /**
+   * Start manager if not yet running.
+   */
   public start() {
     if (this.timerId || this.running) return;
     this.running = true;
     this.continue();
   }
 
-  public cancel() {
-    this.reset();
-    this.queue.forEach((op) => op.cancel());
-  }
-
-  public continue() {
-    if (!this.queue.length) {
-      this.reset();
-    } else {
-      const retryableOperation = this.queue[0];
-      retryableOperation?.start();
-    }
-  }
-
+  /**
+   * Reset manager to inital state.
+   */
   private reset() {
     if (this.timerId) {
       clearTimeout(this.timerId);
@@ -81,6 +88,29 @@ class RetryableOperationManager {
     this.retryCount = 1;
   }
 
+  /**
+   * Cancel all inflight operations and reset manager.
+   */
+  public cancel() {
+    this.reset();
+    this.queue.forEach((op) => op.cancel());
+  }
+
+  /**
+   * Continue processing queue. If empty queue reset manager; otherwise start processing.
+   */
+  public continue() {
+    if (!this.queue.length) {
+      this.reset();
+    } else {
+      const retryableOperation = this.queue[0];
+      retryableOperation?.start();
+    }
+  }
+
+  /**
+   * Schedule retry.
+   */
   public retry() {
     this.scheduleRetry(this.delayFn(this.retryCount));
   }
@@ -88,7 +118,7 @@ class RetryableOperationManager {
   private scheduleRetry(delay: number) {
     if (this.timerId) {
       throw new Error(
-        `[RetryableOperationManager] Encountered overlapping retries`
+        `[RetryableOperationManagerError] Encountered overlapping retries.`
       );
     }
 
@@ -98,7 +128,7 @@ class RetryableOperationManager {
       this.continue();
     }, delay) as any) as number;
     console.debug(
-      `[RetryableOperationManager] Retrigger in ${delay} (length: ${this.queue.length}, retry: ${this.retryCount})`
+      `[RetryableOperationManager] Retrigger in ${delay} ms (queue: ${this.queue.length}, retry: ${this.retryCount}).`
     );
   }
 }
@@ -122,6 +152,10 @@ class RetryableOperation<TValue = any> {
     private nextLink: NextLink,
     private retryIf: RetryFunction
   ) {}
+
+  public extract(): Operation {
+    return this.operation;
+  }
 
   /**
    * Register a new observer for this operation.
@@ -217,7 +251,6 @@ class RetryableOperation<TValue = any> {
       observer.complete!();
     }
     this.manager.remove(this);
-    this.manager.continue();
   };
 
   private onError = async (error: any) => {
@@ -280,7 +313,6 @@ export class ManagedRetryLink extends ApolloLink {
       this.retryIf
     );
     this.manager.push(retryable);
-    this.manager.start();
 
     return new Observable((observer) => {
       retryable.subscribe(observer);

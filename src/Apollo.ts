@@ -49,19 +49,6 @@ const wsClient = new SubscriptionClient(wshost, {
     }),
 });
 const wsLink = new WebSocketLink(wsClient);
-// const patch = <T>(caller: T) => {
-//   const ref = (caller as any)["executeOperation"];
-//   (caller as any)["executeOperation"] = (...params: any[]) => {
-//     const handler = params[1];
-//     return ref.apply(caller, [
-//       params[0],
-//       (error: any, result: any) => {
-//         handler(error, result);
-//       },
-//     ]);
-//   };
-// };
-// patch(wsClient);
 
 const retryLink = new RetryLink({ attempts: { max: Infinity } });
 const managedRetryLink = new ManagedRetryLink({
@@ -69,8 +56,8 @@ const managedRetryLink = new ManagedRetryLink({
   delay: () => 5000,
 });
 
-// // using the ability to split links, you can send data to each link
-// // depending on what kind of operation is being sent
+// using the ability to split links, you can send data to each link
+// depending on what kind of operation is being sent
 const link = ApolloLink.split(
   // split based on operation type
   ({ query }) => {
