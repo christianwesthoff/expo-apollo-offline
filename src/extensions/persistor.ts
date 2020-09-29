@@ -177,8 +177,8 @@ class PersistorAdapter<T> {
 
       this.log.info(
         typeof data === "string"
-          ? `Persisted source of size ${data.length} characters`
-          : "Persisted source"
+          ? `Persisted object of size ${data.length} characters`
+          : "Persisted object"
       );
     } catch (error) {
       this.log.error("Error persisting source", error);
@@ -195,8 +195,8 @@ class PersistorAdapter<T> {
 
         this.log.info(
           typeof data === "string"
-            ? `Restored source of size ${data.length} characters`
-            : "Restored source"
+            ? `Restored object of size ${data.length} characters`
+            : "Restored object"
         );
       } else {
         this.log.info("No stored source to restore");

@@ -16,7 +16,7 @@ import { ManagedRetryLink } from "./extensions/managedRetryLink";
 import { RetryLink } from "@apollo/link-retry/lib/retryLink";
 import { onError } from "@apollo/link-error";
 
-const endpoint = "1emerging-crayfish-72.hasura.app/v1";
+const endpoint = "emerging-crayfish-72.hasura.app/v1";
 const host = `https://${endpoint}/graphql`;
 const wshost = `wss://${endpoint}/graphql`;
 
