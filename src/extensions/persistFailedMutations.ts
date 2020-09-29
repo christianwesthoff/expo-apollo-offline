@@ -1,6 +1,6 @@
 import { ApolloClient, NormalizedCacheObject } from "@apollo/client";
 import { PersistentStorage } from "apollo-cache-persist/types";
-import { PersistedData, Persistable, Persistor, TriggerFn } from "./cache";
+import { PersistedData, Persistable, Persistor } from "./cache";
 import { compileQuery, getDocumentBody } from "./graphql-utils";
 import {
   ManagedRetryLink,
@@ -46,7 +46,7 @@ class MutationRestore implements Persistable<PersistedOperationQueue> {
   public restore(data: PersistedOperationQueue) {
     if (!data || !data.length) return;
     const persistedMutationPromises = Promise.all(
-      data.map(({ operation, timestamp }, index) => async () => {
+      data.map(({ operation }, index) => async () => {
         const mutation = compileQuery(operation.query);
         this.apolloClient.mutate({ mutation, variables: operation.variables });
         // We don't want to chain the requests; maybe can successfully execute without each other so we just wait
