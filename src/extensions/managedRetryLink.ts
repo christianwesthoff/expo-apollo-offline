@@ -41,10 +41,6 @@ class RetryableOperationManager {
 
   constructor(private delayFn: DelayFunction) {}
 
-  public isRunning() {
-    return this.running;
-  }
-
   public push(operation: RetryableOperation<any>) {
     this.queue.push(operation);
   }
@@ -62,7 +58,6 @@ class RetryableOperationManager {
   }
 
   public cancel() {
-    clearTimeout(this.timerId);
     this.reset();
     this.queue.forEach((op) => op.cancel());
   }
@@ -77,6 +72,9 @@ class RetryableOperationManager {
   }
 
   private reset() {
+    if (this.timerId) {
+      clearTimeout(this.timerId);
+    }
     this.queue = [];
     this.timerId = undefined;
     this.running = false;
@@ -100,7 +98,7 @@ class RetryableOperationManager {
       this.continue();
     }, delay) as any) as number;
     console.debug(
-      `[RetryableOperationManager] Retrigger in ${delay} (retry: ${this.retryCount})`
+      `[RetryableOperationManager] Retrigger in ${delay} (length: ${this.queue.length}, retry: ${this.retryCount})`
     );
   }
 }
