@@ -16,7 +16,7 @@ import { ManagedRetryLink } from "./extensions/managedRetryLink";
 import { RetryLink } from "@apollo/link-retry/lib/retryLink";
 import { onError } from "@apollo/link-error";
 
-const endpoint = "emerging-crayfish-72.hasura.app/v1";
+const endpoint = "1emerging-crayfish-72.hasura.app/v1";
 const host = `https://${endpoint}/graphql`;
 const wshost = `wss://${endpoint}/graphql`;
 
@@ -64,7 +64,10 @@ const wsLink = new WebSocketLink(wsClient);
 // patch(wsClient);
 
 const retryLink = new RetryLink({ attempts: { max: Infinity } });
-// // const retryManagedLink = new RetryManagedLink({ attempts: { max: Infinity } });
+const managedRetryLink = new ManagedRetryLink({
+  attempts: { max: Infinity },
+  delay: () => 5000,
+});
 
 // // using the ability to split links, you can send data to each link
 // // depending on what kind of operation is being sent
@@ -75,16 +78,13 @@ const link = ApolloLink.split(
     return kind === "OperationDefinition" && operation === "subscription";
   },
   wsLink,
-  // // Retry queries
   ApolloLink.split(
-    // split based on operation type
     ({ query }) => {
       const { kind, operation } = getMainDefinition(query) as any;
       return kind === "OperationDefinition" && operation === "query";
     },
     ApolloLink.from([retryLink, httpLink]),
-    // Retry queries
-    ApolloLink.from([retryLink, httpLink])
+    ApolloLink.from([managedRetryLink, httpLink])
   )
 );
 

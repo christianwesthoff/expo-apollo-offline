@@ -20,12 +20,12 @@ export namespace RetryLink {
     /**
      * Configuration for the delay strategy to use, or a custom delay strategy.
      */
-    delay?: DelayFunctionOptions;
+    delay?: DelayFunctionOptions | DelayFunction;
 
     /**
      * Configuration for the retry strategy to use, or a custom retry strategy.
      */
-    attempts?: RetryFunctionOptions;
+    attempts?: RetryFunctionOptions | RetryFunction;
   }
 }
 
@@ -38,7 +38,7 @@ class RetryableOperationManager {
   private queue: RetryableOperation<any>[] = [];
   // private currentOperation: RetryableOperation<any> | undefined;
   private running = false;
-  private retryCount = 1;
+  private retryCount = 0;
 
   constructor(private delayFn: DelayFunction) {}
 
@@ -50,28 +50,35 @@ class RetryableOperationManager {
     this.queue.push(operation);
   }
 
+  public remove(operation: RetryableOperation<any>) {
+    const index = this.queue.indexOf(operation);
+    if (index < 0) return;
+    this.queue.splice(index, 1);
+  }
+
   public start() {
-    if (this.timerId) return;
+    if (this.timerId || this.running) return;
+    // this.reset();
     this.running = true;
-    this.scheduleRetry(this.delayFn(this.retryCount));
+    this.continue();
   }
 
   public cancel() {
     clearTimeout(this.timerId);
+    this.reset();
     this.queue.forEach((op) => op.cancel());
-    this.complete();
   }
 
   public continue() {
     if (!this.queue.length) {
-      this.complete();
+      this.reset();
     } else {
       const retryableOperation = this.queue[0];
       retryableOperation?.start();
     }
   }
 
-  private complete() {
+  private reset() {
     // this.currentOperation = undefined;
     this.queue = [];
     this.timerId = undefined;
@@ -79,9 +86,13 @@ class RetryableOperationManager {
     this.retryCount = 1;
   }
 
+  public retry() {
+    this.scheduleRetry(this.delayFn(this.retryCount));
+  }
+
   private scheduleRetry(delay: number) {
     if (this.timerId) {
-      throw new Error(`RetryLink BUG! Encountered overlapping retries`);
+      throw new Error(`[RetryManager] Encountered overlapping retries`);
     }
 
     this.timerId = (setTimeout(() => {
@@ -90,7 +101,7 @@ class RetryableOperationManager {
       this.retryCount++;
       this.continue();
     }, delay) as any) as number;
-    console.log("[DEBUG] Trigger in ", delay, this.retryCount);
+    console.log("[RetryManager] Trigger in ", delay, this.retryCount);
   }
 }
 
@@ -182,7 +193,7 @@ class RetryableOperation<TValue = any> {
     // this.timerId = undefined;
     this.currentSubscription = null;
     this.canceled = true;
-    this.manager.continue();
+    this.manager.remove(this);
   }
 
   private try() {
@@ -207,6 +218,7 @@ class RetryableOperation<TValue = any> {
       if (!observer) continue;
       observer.complete!();
     }
+    this.manager.remove(this);
     this.manager.continue();
   };
 
@@ -220,8 +232,7 @@ class RetryableOperation<TValue = any> {
       error
     );
     if (shouldRetry) {
-      this.manager.push(this);
-      this.manager.start();
+      this.manager.retry();
       return;
     }
 
@@ -251,9 +262,12 @@ export class ManagedRetryLink extends ApolloLink {
   constructor(options?: RetryLink.Options) {
     super();
     const { attempts, delay } = options || ({} as RetryLink.Options);
-    this.retryIf = buildRetryFunction(attempts);
+    this.retryIf =
+      typeof attempts === "function" ? attempts : buildRetryFunction(attempts);
     this.manager = new RetryableOperationManager(
-      buildDelayFunction(delay) as DelayFunction
+      typeof delay === "function"
+        ? delay
+        : (buildDelayFunction(delay) as DelayFunction)
     );
   }
 
@@ -267,7 +281,8 @@ export class ManagedRetryLink extends ApolloLink {
       nextLink,
       this.retryIf
     );
-    retryable.start();
+    this.manager.push(retryable);
+    this.manager.start();
 
     return new Observable((observer) => {
       retryable.subscribe(observer);
