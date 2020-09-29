@@ -15,6 +15,9 @@ import { SubscriptionClient } from "subscriptions-transport-ws";
 import { ManagedRetryLink } from "./extensions/managedRetryLink";
 import { RetryLink } from "@apollo/link-retry/lib/retryLink";
 import { onError } from "@apollo/link-error";
+import persistedFailedOperations, {
+  PersistedOperationQueue,
+} from "./extensions/persistedFailedOperations";
 
 const endpoint = "emerging-crayfish-72.hasura.app/v1";
 const host = `https://${endpoint}/graphql`;
@@ -106,16 +109,29 @@ const cache = new InMemoryCache();
 const getStorage = () =>
   (window !== undefined && window.localStorage
     ? window.localStorage
-    : AsyncStorage) as PersistentStorage<PersistedData<NormalizedCacheObject>>;
+    : AsyncStorage) as PersistentStorage<PersistedData<NormalizedCacheObject>> &
+    PersistentStorage<PersistedData<PersistedOperationQueue>>;
 
-export const waitOnCache = Promise.all([
-  persistedApolloCache({
-    cache,
-    storage: getStorage(),
-    maxSize: false,
-    debug: true,
-  }),
-]);
+export const initApolloClient = (
+  client: ApolloClient<NormalizedCacheObject>
+) => {
+  const storage = getStorage();
+  return Promise.all([
+    persistedApolloCache({
+      cache,
+      storage,
+      maxSize: false,
+      debug: true,
+    }),
+    persistedFailedOperations({
+      client,
+      link: managedRetryLink,
+      storage,
+      maxSize: false,
+      debug: true,
+    }),
+  ]);
+};
 
 export const createApolloClient = () =>
   new ApolloClient({

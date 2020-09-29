@@ -1,14 +1,14 @@
 const registerListener = <T>(
   caller: T,
   fnName: keyof T,
-  onExecute: () => void
+  trigger: () => void
 ) => {
   const ref = caller[fnName] as any;
-  (caller[fnName] as any) = (...args: any[]) => {
+  caller[fnName] = ((...args: any[]) => {
     const res = ref.apply(caller, args);
-    onExecute();
+    trigger();
     return res;
-  };
+  }) as any;
 
   return () => {
     caller[fnName] = ref;
@@ -18,10 +18,10 @@ const registerListener = <T>(
 const registerListeners = <T>(
   caller: T,
   fnNames: (keyof T)[],
-  onExecute: () => void
+  trigger: () => void
 ) => {
   const unrefs = fnNames.map((fnName) =>
-    registerListener(caller, fnName, onExecute)
+    registerListener(caller, fnName, trigger)
   );
   return () => {
     unrefs.forEach((unref) => unref());

@@ -1,8 +1,8 @@
 import { ApolloClient, NormalizedCacheObject } from "@apollo/client";
 import { PersistentStorage } from "apollo-cache-persist/types";
-import { PersistedData, Persistable, Persistor } from "./cache";
+import { PersistedData, Persistable, Persistor } from "./persistor";
 import {
-  compileQuery,
+  compileDocument,
   getDocumentBody,
   getDocumentType,
 } from "./graphql-utils";
@@ -33,7 +33,7 @@ const delayInBetween = 200;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-class OperationRestore implements Persistable<PersistedOperationQueue> {
+class OperationAdapter implements Persistable<PersistedOperationQueue> {
   constructor(
     private manager: RetryableOperationManager,
     private apolloClient: ApolloClient<NormalizedCacheObject>
@@ -49,32 +49,38 @@ class OperationRestore implements Persistable<PersistedOperationQueue> {
   }
   public restore(data: PersistedOperationQueue) {
     if (!data || !data.length) return;
-    const persistedMutationPromises = Promise.all(
-      data.map(({ operation }, index) => async () => {
+    const persistedMutationPromises = data.map(
+      ({ operation }, index) => async () => {
+        // We don't want to chain the requests; maybe can successfully execute without each other so we just wait
         await wait(index * delayInBetween);
-        const query = compileQuery(operation.query);
-        const docType = getDocumentType(query);
+        const doc = compileDocument(operation.query);
+        const docType = getDocumentType(doc);
         switch (docType) {
           case "mutation":
             this.apolloClient.mutate({
-              mutation: query,
+              mutation: doc,
               variables: operation.variables,
             });
             break;
           case "query":
-            this.apolloClient.query({ query, variables: operation.variables });
+            this.apolloClient.query({
+              query: doc,
+              variables: operation.variables,
+            });
             break;
           case "subscription":
             this.apolloClient.subscribe({
-              query,
+              query: doc,
               variables: operation.variables,
             });
             break;
         }
-        // We don't want to chain the requests; maybe can successfully execute without each other so we just wait
-      })
+      }
     );
-    setTimeout(persistedMutationPromises, initalDelay);
+    setTimeout(
+      async () => await Promise.all(persistedMutationPromises),
+      initalDelay
+    );
   }
 }
 
@@ -86,10 +92,10 @@ export default async function persistFailedOperations({
   const manager = (link as any)["manager"] as RetryableOperationManager;
   const persistor = new Persistor({
     key: "apollo-mutation-queue",
-    ...options,
-    source: new OperationRestore(manager, client),
+    source: new OperationAdapter(manager, client),
     trigger: (trigger) =>
       registerListeners(manager, ["push", "remove", "reset"], trigger),
+    ...options,
   });
   return await persistor.persist();
 }
