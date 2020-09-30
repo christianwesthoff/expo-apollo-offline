@@ -90,7 +90,7 @@ export default async function persistFailedOperations({
   client,
   ...options
 }: PersistRetryLinkOptions) {
-  const manager = (link as any)["manager"] as RetryableOperationManager;
+  const manager = link.getManager();
   const persistor = new Persistor({
     key: "apollo-mutation-queue",
     source: new OperationAdapter(manager, client),

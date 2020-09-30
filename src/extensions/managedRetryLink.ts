@@ -316,6 +316,10 @@ export class ManagedRetryLink extends ApolloLink {
     );
   }
 
+  public getManager() {
+    return this.manager;
+  }
+
   public request(
     operation: Operation,
     nextLink: NextLink
