@@ -50,7 +50,7 @@ export function useOfflineMutation<
         const fromCache = context.client?.cache.readQuery<TData>(
           {
             query: sourceQuery,
-            id: "ROOT_QUERY",
+            // id: "ROOT_QUERY",
           },
           true
         );
@@ -59,7 +59,7 @@ export function useOfflineMutation<
           options1?.variables
         );
         context.client?.cache.writeQuery({
-          id: "ROOT_QUERY",
+          // id: "ROOT_QUERY",
           query: sourceQuery,
           data,
           broadcast: true,
