@@ -79,7 +79,6 @@ const link = ApolloLink.split(
 
 const errorLink = onError(
   ({ response, graphQLErrors, networkError, operation: gqlOperation }) => {
-    console.log("ERROR");
     if (graphQLErrors) {
       console.log(graphQLErrors);
       graphQLErrors.map(({ message, locations, path }) =>
