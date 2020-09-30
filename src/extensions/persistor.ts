@@ -1,4 +1,8 @@
-import { PersistentStorage } from "apollo-cache-persist/types";
+export interface PersistentStorage<T> {
+  getItem: (key: string) => Promise<T | null> | T | null;
+  setItem: (key: string, data: T) => Promise<T> | Promise<void> | void | T;
+  removeItem: (key: string) => Promise<T> | Promise<void> | void;
+}
 
 export type PersistedData<T> = T | string | null;
 
