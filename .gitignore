@@ -123,3 +123,5 @@ dist
 
 # jest
 __snapshots__
+
+.DS_Store
