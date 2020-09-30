@@ -6,7 +6,7 @@ A boilerplate for TypeScript + Expo + Apollo Client v3 + React Navigation v5
 
 This is minimal example code using following libraries:
 
-- Expo SDK36 with TypeScript
+- Expo SDK39 with TypeScript
 - Apollo Client v3 with mocking
 - React Navigation v5
 
