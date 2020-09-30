@@ -1,4 +1,4 @@
-# typescript-expo-apollo-boilerplate
+# expo-apollo-offline
 
 A boilerplate for TypeScript + Expo + Apollo Client v3 + React Navigation v5
 
@@ -14,8 +14,6 @@ This is minimal example code using following libraries:
 
 ```bash
 npm install -g expo-cli
-git clone -b v2 https://github.com/dai-shi/typescript-expo-apollo-boilerplate.git
-cd typescript-expo-apollo-boilerplate
 npm install
 npm start
 ```
