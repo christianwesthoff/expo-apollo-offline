@@ -9,6 +9,7 @@ const NewPost: React.FC = () => {
     offlineUpdate: [
       {
         query: QUERY_POSTS,
+        variables: {},
         updateQuery: (data, variables) => ({
           posts: [
             ...(data?.posts || []),
