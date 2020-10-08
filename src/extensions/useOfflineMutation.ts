@@ -10,7 +10,10 @@ import {
 } from "@apollo/client";
 import { useCallback, useContext } from "react";
 import { DocumentNode } from "graphql";
-import { changeDocumentType, getDocumentType } from "./graphql-utils";
+import {
+  changeDocumentType,
+  getDocumentType,
+} from "../extensions/graphql-utils";
 
 export type OfflineMutationHookOptions<
   TData = any,
@@ -19,6 +22,7 @@ export type OfflineMutationHookOptions<
   offlineUpdate?: [
     {
       query: DocumentNode;
+      variables?: OperationVariables;
       updateQuery: (data: any, variables?: TVariables) => any;
     }
   ];
@@ -39,7 +43,7 @@ export function useOfflineMutation<
     ) => Promise<FetchResult<TData>>
   >(
     (options1) => {
-      options?.offlineUpdate?.forEach(({ query, updateQuery }) => {
+      options?.offlineUpdate?.forEach(({ query, variables, updateQuery }) => {
         const isSubscription = getDocumentType(query) === "subscription";
         let sourceQuery;
         if (isSubscription) {
@@ -50,7 +54,7 @@ export function useOfflineMutation<
         const fromCache = context.client?.cache.readQuery<TData>(
           {
             query: sourceQuery,
-            // id: "ROOT_QUERY",
+            variables,
           },
           true
         );
@@ -59,18 +63,11 @@ export function useOfflineMutation<
           options1?.variables
         );
         context.client?.cache.writeQuery({
-          // id: "ROOT_QUERY",
           query: sourceQuery,
+          variables,
           data,
           broadcast: true,
         });
-        // if (isSubscription) {
-        //   context.client?.cache.writeQuery({
-        //     id: "ROOT_SUBSCRIPTION",
-        //     query,
-        //     data,
-        //   });
-        // }
       });
       return fetchResult(options1);
     },
