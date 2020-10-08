@@ -15,19 +15,33 @@ import {
   getDocumentType,
 } from "../extensions/graphql-utils";
 
+export interface OfflineMutationUpdateOptions<
+  TQueryData = any,
+  TQueryVariables = any,
+  TMutationVariables = any,
+  TAdditionalVariables = any
+> {
+  query: DocumentNode | TypedDocumentNode<TQueryData, TQueryVariables>;
+  updateQuery: (
+    data: TQueryData,
+    variables: TQueryVariables
+  ) => TQueryData | Promise<TQueryData>;
+  transformVariables?: (
+    variables?: TMutationVariables & TAdditionalVariables
+  ) => TQueryVariables | Promise<TQueryVariables>;
+  additionalVariables?: TAdditionalVariables;
+}
+
 export type OfflineMutationHookOptions<
   TData = any,
   TVariables = OperationVariables
 > = MutationHookOptions<TData, TVariables> & {
-  offlineUpdate?: [
-    {
-      query: DocumentNode;
-      variables?: OperationVariables;
-      updateQuery: (data: any, variables?: TVariables) => any;
-    }
-  ];
+  offlineUpdate?: OfflineMutationUpdateOptions<any, any, TVariables, any>[];
   optimisticReturn?: (
-    variables?: TVariables
+    variables?: TVariables,
+    fetchResult?: Promise<
+      FetchResult<TData, Record<string, any>, Record<string, any>>
+    >
   ) => Promise<FetchResult<TData, Record<string, any>, Record<string, any>>>;
 };
 
@@ -46,43 +60,57 @@ export function useOfflineMutation<
     ) => Promise<FetchResult<TData>>
   >(
     async (options1) => {
-      if (options?.offlineUpdate) {
-        const offlineUpdates = options.offlineUpdate || [];
+      const client = context.client;
+      const mutationVariables = options1?.variables;
+      if (client && options?.offlineUpdate?.length) {
+        const offlineUpdate = options.offlineUpdate;
         await Promise.all(
-          offlineUpdates.map(async ({ query, variables, updateQuery }) => {
-            const isSubscription = getDocumentType(query) === "subscription";
-            let sourceQuery;
-            if (isSubscription) {
-              sourceQuery = changeDocumentType(query, "query")!;
-            } else {
-              sourceQuery = query;
+          offlineUpdate.map(
+            async ({
+              query,
+              transformVariables,
+              additionalVariables,
+              updateQuery,
+            }) => {
+              const isSubscription = getDocumentType(query) === "subscription";
+              const source = isSubscription
+                ? changeDocumentType(query, "query")!
+                : query;
+              const queryVariables =
+                (await transformVariables?.({
+                  ...mutationVariables,
+                  ...additionalVariables,
+                })) ?? additionalVariables;
+              const fromCache = client.cache.readQuery<TData>(
+                {
+                  query: source,
+                  variables: queryVariables,
+                },
+                true
+              );
+              const data = await updateQuery(
+                fromCache ?? ({} as TData),
+                mutationVariables
+              );
+              client.cache.writeQuery({
+                query: source,
+                variables: queryVariables,
+                data,
+                broadcast: true,
+              });
             }
-            const fromCache = context.client?.cache.readQuery<TData>(
-              {
-                query: sourceQuery,
-                variables,
-              },
-              true
-            );
-            const data = updateQuery(
-              fromCache ?? ({} as TData),
-              options1?.variables
-            );
-            context.client?.cache.writeQuery({
-              query: sourceQuery,
-              variables,
-              data,
-              broadcast: true,
-            });
-          })
+          )
         );
       }
       if (options?.optimisticReturn) {
-        return options.optimisticReturn(options1?.variables);
+        return options.optimisticReturn(
+          mutationVariables,
+          fetchResult(options1)
+        );
       }
       return fetchResult(options1);
     },
-    [fetchResult, options]
+    [fetchResult, options, context]
   );
   return [offlineFetchResult, mutationResult];
 }

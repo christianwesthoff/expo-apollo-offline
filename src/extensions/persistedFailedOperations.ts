@@ -32,7 +32,8 @@ export interface PersistRetryLinkOptions {
 const initalDelay = 1000;
 const delayInBetween = 200;
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const wait = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 class OperationAdapter implements Persistable<PersistedOperationQueue> {
   constructor(
