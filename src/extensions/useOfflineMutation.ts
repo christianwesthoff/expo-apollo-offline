@@ -60,9 +60,9 @@ export function useOfflineMutation<
     ) => Promise<FetchResult<TData>>
   >(
     async (options1) => {
-      const client = context.client;
+      const cache = context.client?.cache;
       const mutationVariables = options1?.variables;
-      if (client && options?.offlineUpdate?.length) {
+      if (cache && options?.offlineUpdate?.length) {
         const offlineUpdate = options.offlineUpdate;
         await Promise.all(
           offlineUpdate.map(
@@ -82,7 +82,7 @@ export function useOfflineMutation<
                     ...additionalVariables,
                   })
                 : additionalVariables;
-              const fromCache = client.cache.readQuery<TData>(
+              const fromCache = cache.readQuery<TData>(
                 {
                   query: source,
                   variables: queryVariables,
@@ -93,7 +93,7 @@ export function useOfflineMutation<
                 fromCache ?? ({} as TData),
                 mutationVariables
               );
-              client.cache.writeQuery({
+              cache.writeQuery({
                 query: source,
                 variables: queryVariables,
                 data,
