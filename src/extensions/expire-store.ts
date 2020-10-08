@@ -14,7 +14,7 @@ export class ExpireableStorageAdapter implements StorageInterface {
     private expiresAt: ExpiresFn
   ) {}
 
-  private static re = /{"data":"(.*)","expiresAt":(\d+)}/g;
+  private static re = /{"data":(.*),"expiresAt":(\d+)}/;
 
   private transformFrom(data: string) {
     const match = ExpireableStorageAdapter.re.exec(data);
@@ -23,17 +23,18 @@ export class ExpireableStorageAdapter implements StorageInterface {
   }
 
   private transformTo(data: string, expiresAt: number) {
-    return JSON.stringify({ data, expiresAt });
+    return `{"data":${data},"expiresAt":${expiresAt}})`;
   }
 
   async getItem(key: string) {
     const result = await this.storage.getItem(key);
     if (!result) return null;
     const { data, expiresAt } = this.transformFrom(result)!;
-    if (expiresAt >= Date.now()) return null;
+    if (expiresAt < Date.now()) return null;
     return data;
   }
   async setItem(key: string, data: string) {
+    console.log(data);
     return await this.storage.setItem(
       key,
       this.transformTo(data, this.expiresAt(data))
