@@ -17,7 +17,7 @@ const NewPost: React.FC = () => {
         }),
       },
     ],
-    optimisticReturn: (variables, response) => {
+    offlineReturn: (variables, response) => {
       response?.then(() => console.log("DONE SENDING"));
       return { data: variables };
     },
