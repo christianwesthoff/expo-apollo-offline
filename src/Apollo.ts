@@ -7,8 +7,10 @@ import {
 } from "@apollo/client";
 import { WebSocketLink } from "@apollo/client/link/ws";
 import { getMainDefinition } from "@apollo/client/utilities";
-import { persistCache as persistedApolloCache } from "apollo-cache-persist";
-import { PersistentStorage, PersistedData } from "apollo-cache-persist/types";
+import {
+  persistCache as persistedApolloCache,
+  PersistentStorage,
+} from "apollo3-cache-persist";
 import { AsyncStorage } from "react-native";
 import { setContext } from "@apollo/link-context";
 import { SubscriptionClient } from "subscriptions-transport-ws";
@@ -18,6 +20,8 @@ import { onError } from "@apollo/link-error";
 import persistedFailedOperations, {
   PersistedOperationQueue,
 } from "./extensions/persistedFailedOperations";
+import { PersistedData } from "apollo3-cache-persist/lib/types";
+import { ExpireableStorageAdapter } from "./extensions/expire-store";
 
 const endpoint = "emerging-crayfish-72.hasura.app/v1";
 const host = `https://${endpoint}/graphql`;
@@ -36,7 +40,6 @@ const httpLink = ApolloLink.from([
   httpAuthLink,
   new HttpLink({
     uri: host,
-    // credentials: "include",
   }),
 ]);
 
@@ -96,12 +99,10 @@ const errorLink = onError(({ response, graphQLErrors, networkError }) => {
   }
 });
 
-const cache = new InMemoryCache();
 const getStorage = () =>
-  (window !== undefined && window.localStorage
+  window !== undefined && window.localStorage
     ? window.localStorage
-    : AsyncStorage) as PersistentStorage<PersistedData<NormalizedCacheObject>> &
-    PersistentStorage<PersistedData<PersistedOperationQueue>>;
+    : AsyncStorage;
 
 export const initApolloClient = (
   client: ApolloClient<NormalizedCacheObject>
@@ -109,15 +110,25 @@ export const initApolloClient = (
   const storage = getStorage();
   return Promise.all([
     persistedApolloCache({
-      cache,
-      storage,
+      cache: client.cache,
+      storage: new ExpireableStorageAdapter(storage, () => {
+        const tmrw = new Date(Date.now());
+        tmrw.setDate(tmrw.getDate() + 1);
+        tmrw.setHours(0);
+        tmrw.setMinutes(0);
+        tmrw.setSeconds(0);
+        tmrw.setMilliseconds(0);
+        return +tmrw;
+      }) as PersistentStorage<PersistedData<NormalizedCacheObject>>,
       maxSize: false,
       debug: true,
     }),
     persistedFailedOperations({
       client,
       link: managedRetryLink,
-      storage,
+      storage: storage as PersistentStorage<
+        PersistedData<PersistedOperationQueue>
+      >,
       maxSize: false,
       debug: true,
     }),
@@ -127,6 +138,6 @@ export const initApolloClient = (
 export const createApolloClient = () =>
   new ApolloClient({
     link: ApolloLink.from([errorLink, link]),
-    cache,
+    cache: new InMemoryCache(),
     defaultOptions: {},
   });
