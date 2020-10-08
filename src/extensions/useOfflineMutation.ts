@@ -7,8 +7,9 @@ import {
   MutationFunctionOptions,
   FetchResult,
   getApolloContext,
+  ApolloError,
 } from "@apollo/client";
-import { useCallback, useContext } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import { DocumentNode } from "graphql";
 import {
   changeDocumentType,
@@ -56,6 +57,9 @@ export function useOfflineMutation<
 ): MutationTuple<TData, TVariables> {
   const context = useContext(getApolloContext());
   const [fetchResult, mutationResult] = useMutation(mutation, options);
+  const [optimisticErrors, setOptimisticErrors] = useState<
+    string[] | undefined
+  >();
   const offlineFetchResult = useCallback<
     (
       options1?: MutationFunctionOptions<TData, TVariables>
@@ -64,6 +68,7 @@ export function useOfflineMutation<
     async (options1) => {
       const cache = context.client?.cache;
       const mutationVariables = options1?.variables;
+      const errors: string[] = [];
       if (cache && options?.offlineUpdate?.length) {
         const offlineUpdate = options.offlineUpdate;
         await Promise.all(
@@ -91,10 +96,16 @@ export function useOfflineMutation<
                 },
                 true
               );
-              const data = await updateQuery(
-                fromCache ?? ({} as TData),
-                mutationVariables
-              );
+              let data;
+              try {
+                data = await updateQuery(
+                  fromCache ?? ({} as TData),
+                  mutationVariables
+                );
+              } catch (e) {
+                errors.push(e);
+                return;
+              }
               cache.writeQuery({
                 query: source,
                 variables: queryVariables,
@@ -106,6 +117,9 @@ export function useOfflineMutation<
         );
       }
       if (options?.optimisticReturn) {
+        if (errors.length) {
+          setOptimisticErrors(errors);
+        }
         return options.optimisticReturn(
           mutationVariables,
           fetchResult(options1)
@@ -115,5 +129,17 @@ export function useOfflineMutation<
     },
     [fetchResult, options, context]
   );
-  return [offlineFetchResult, mutationResult];
+  const offlineMutationResult = useMemo(() => {
+    if (options?.optimisticReturn) {
+      return {
+        ...mutationResult,
+        loading: false,
+        error: optimisticErrors
+          ? new ApolloError({ errorMessage: optimisticErrors?.join(" ") })
+          : undefined,
+      };
+    }
+    return mutationResult;
+  }, [mutationResult, options]);
+  return [offlineFetchResult, offlineMutationResult];
 }
