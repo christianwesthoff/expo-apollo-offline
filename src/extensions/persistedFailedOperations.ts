@@ -1,5 +1,5 @@
 import { ApolloClient, NormalizedCacheObject } from "@apollo/client";
-import { PersistentStorage } from "apollo-cache-persist/types";
+import { PersistentStorage } from "apollo3-cache-persist";
 import { PersistedData, Persistable, Persistor } from "./persistor";
 import {
   compileDocument,
