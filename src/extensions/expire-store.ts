@@ -34,7 +34,6 @@ export class ExpireableStorageAdapter implements StorageInterface {
     return data;
   }
   async setItem(key: string, data: string) {
-    console.log(data);
     return await this.storage.setItem(
       key,
       this.transformTo(data, this.expiresAt(data))

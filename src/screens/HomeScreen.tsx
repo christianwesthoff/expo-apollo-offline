@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Button, Text } from "react-native";
+import React from "react";
+import { StyleSheet, View, Button } from "react-native";
 import { StackNavigationProp } from "@react-navigation/stack";
 
 import { StackParams } from "./types";
