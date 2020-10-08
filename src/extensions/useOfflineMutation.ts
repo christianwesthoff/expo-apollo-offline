@@ -76,11 +76,12 @@ export function useOfflineMutation<
               const source = isSubscription
                 ? changeDocumentType(query, "query")!
                 : query;
-              const queryVariables =
-                (await transformVariables?.({
-                  ...mutationVariables,
-                  ...additionalVariables,
-                })) ?? additionalVariables;
+              const queryVariables = transformVariables
+                ? await transformVariables({
+                    ...mutationVariables,
+                    ...additionalVariables,
+                  })
+                : additionalVariables;
               const fromCache = client.cache.readQuery<TData>(
                 {
                   query: source,
