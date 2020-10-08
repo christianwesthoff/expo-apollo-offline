@@ -135,12 +135,13 @@ export function useOfflineMutation<
       return {
         ...mutationResult,
         loading: false,
-        error: offlineErrors
-          ? new ApolloError({ errorMessage: offlineErrors?.join(" ") })
-          : undefined,
+        error:
+          mutationResult.error ?? offlineErrors
+            ? new ApolloError({ errorMessage: offlineErrors?.join(" ") })
+            : undefined,
       };
     }
     return mutationResult;
-  }, [mutationResult, options]);
+  }, [mutationResult, options, offlineErrors]);
   return [offlineFetchResult, offlineMutationResult];
 }
