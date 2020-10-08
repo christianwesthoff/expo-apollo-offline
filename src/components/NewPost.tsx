@@ -20,7 +20,7 @@ const NewPost: React.FC = () => {
     offlineReturn: (variables) => {
       return { data: variables };
     },
-    offlineSubscribe: (fetchResult) =>
+    statusSubscribe: (fetchResult) =>
       fetchResult?.then(() => console.log("DONE SUBMITTING UPDATE!")),
   });
   const [text, setText] = useState("");
