@@ -17,11 +17,14 @@ const NewPost: React.FC = () => {
         }),
       },
     ],
+    optimisticReturn: async (variables) => {
+      return { data: variables };
+    },
   });
   const [text, setText] = useState("");
 
-  const onSubmit = () => {
-    addPost({
+  const onSubmit = async () => {
+    await addPost({
       variables: { text },
     });
     setText("");

@@ -33,12 +33,14 @@ export class ExpireableStorageAdapter implements StorageInterface {
     if (expiresAt < Date.now()) return null;
     return data;
   }
+
   async setItem(key: string, data: string) {
     return await this.storage.setItem(
       key,
       this.transformTo(data, this.expiresAt(data))
     );
   }
+
   async removeItem(key: string) {
     return await this.storage.removeItem(key);
   }

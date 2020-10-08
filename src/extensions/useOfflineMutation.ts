@@ -26,6 +26,9 @@ export type OfflineMutationHookOptions<
       updateQuery: (data: any, variables?: TVariables) => any;
     }
   ];
+  optimisticReturn?: (
+    variables?: TVariables
+  ) => Promise<FetchResult<TData, Record<string, any>, Record<string, any>>>;
 };
 
 export function useOfflineMutation<
@@ -42,33 +45,41 @@ export function useOfflineMutation<
       options1?: MutationFunctionOptions<TData, TVariables>
     ) => Promise<FetchResult<TData>>
   >(
-    (options1) => {
-      options?.offlineUpdate?.forEach(({ query, variables, updateQuery }) => {
-        const isSubscription = getDocumentType(query) === "subscription";
-        let sourceQuery;
-        if (isSubscription) {
-          sourceQuery = changeDocumentType(query, "query")!;
-        } else {
-          sourceQuery = query;
-        }
-        const fromCache = context.client?.cache.readQuery<TData>(
-          {
-            query: sourceQuery,
-            variables,
-          },
-          true
+    async (options1) => {
+      if (options?.offlineUpdate) {
+        const offlineUpdates = options.offlineUpdate || [];
+        await Promise.all(
+          offlineUpdates.map(async ({ query, variables, updateQuery }) => {
+            const isSubscription = getDocumentType(query) === "subscription";
+            let sourceQuery;
+            if (isSubscription) {
+              sourceQuery = changeDocumentType(query, "query")!;
+            } else {
+              sourceQuery = query;
+            }
+            const fromCache = context.client?.cache.readQuery<TData>(
+              {
+                query: sourceQuery,
+                variables,
+              },
+              true
+            );
+            const data = updateQuery(
+              fromCache ?? ({} as TData),
+              options1?.variables
+            );
+            context.client?.cache.writeQuery({
+              query: sourceQuery,
+              variables,
+              data,
+              broadcast: true,
+            });
+          })
         );
-        const data = updateQuery(
-          fromCache ?? ({} as TData),
-          options1?.variables
-        );
-        context.client?.cache.writeQuery({
-          query: sourceQuery,
-          variables,
-          data,
-          broadcast: true,
-        });
-      });
+      }
+      if (options?.optimisticReturn) {
+        return options.optimisticReturn(options1?.variables);
+      }
       return fetchResult(options1);
     },
     [fetchResult, options]
