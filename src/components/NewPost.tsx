@@ -24,10 +24,10 @@ const NewPost: React.FC = () => {
   const [text, setText] = useState("");
 
   const onSubmit = async () => {
-    var test = await addPost({
+    var response = await addPost({
       variables: { text },
     });
-    console.log(test);
+    console.log(response);
     setText("");
   };
   return (
