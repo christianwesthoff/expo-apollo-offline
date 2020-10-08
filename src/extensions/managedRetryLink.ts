@@ -102,7 +102,7 @@ export class RetryableOperationManager {
   }
 
   /**
-   * Cancel all inflight operations and reset manager.
+   * Resets manager and cancels all inflight operations.
    */
   public cancel() {
     this.reset();
