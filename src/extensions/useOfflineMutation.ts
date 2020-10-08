@@ -42,7 +42,9 @@ export type OfflineMutationHookOptions<
     fetchResult?: Promise<
       FetchResult<TData, Record<string, any>, Record<string, any>>
     >
-  ) => Promise<FetchResult<TData, Record<string, any>, Record<string, any>>>;
+  ) =>
+    | Promise<FetchResult<TData, Record<string, any>, Record<string, any>>>
+    | FetchResult<TData, Record<string, any>, Record<string, any>>;
 };
 
 export function useOfflineMutation<
