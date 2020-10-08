@@ -181,7 +181,7 @@ class PersistorAdapter<T> {
 
       this.log.info(
         typeof data === "string"
-          ? `Persisted object of size ${data.length}`
+          ? `Persisted object of size ${data.length} characters`
           : "Persisted object"
       );
     } catch (error) {

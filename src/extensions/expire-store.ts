@@ -23,7 +23,7 @@ export class ExpireableStorageAdapter implements StorageInterface {
   }
 
   private transformTo(data: string, expiresAt: number) {
-    return `{"data":${data},"expiresAt":${expiresAt}})`;
+    return `{"data":${data},"expiresAt":${expiresAt}}`;
   }
 
   async getItem(key: string) {
