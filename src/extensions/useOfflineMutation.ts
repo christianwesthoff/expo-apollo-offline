@@ -38,7 +38,7 @@ export type OfflineMutationHookOptions<
   TVariables = OperationVariables
 > = MutationHookOptions<TData, TVariables> & {
   offlineUpdate?: OfflineMutationUpdateOptions<any, any, TVariables, any>[];
-  optimisticReturn?: (
+  offlineReturn?: (
     variables?: TVariables,
     fetchResult?: Promise<
       FetchResult<TData, Record<string, any>, Record<string, any>>
@@ -57,9 +57,7 @@ export function useOfflineMutation<
 ): MutationTuple<TData, TVariables> {
   const context = useContext(getApolloContext());
   const [fetchResult, mutationResult] = useMutation(mutation, options);
-  const [optimisticErrors, setOptimisticErrors] = useState<
-    string[] | undefined
-  >();
+  const [offlineErrors, setOfflineErrors] = useState<string[] | undefined>();
   const offlineFetchResult = useCallback<
     (
       options1?: MutationFunctionOptions<TData, TVariables>
@@ -116,26 +114,23 @@ export function useOfflineMutation<
           )
         );
       }
-      if (options?.optimisticReturn) {
+      if (options?.offlineReturn) {
         if (errors.length) {
-          setOptimisticErrors(errors);
+          setOfflineErrors(errors);
         }
-        return options.optimisticReturn(
-          mutationVariables,
-          fetchResult(options1)
-        );
+        return options.offlineReturn(mutationVariables, fetchResult(options1));
       }
       return fetchResult(options1);
     },
     [fetchResult, options, context]
   );
   const offlineMutationResult = useMemo(() => {
-    if (options?.optimisticReturn) {
+    if (options?.offlineReturn) {
       return {
         ...mutationResult,
         loading: false,
-        error: optimisticErrors
-          ? new ApolloError({ errorMessage: optimisticErrors?.join(" ") })
+        error: offlineErrors
+          ? new ApolloError({ errorMessage: offlineErrors?.join(" ") })
           : undefined,
       };
     }
