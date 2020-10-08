@@ -93,7 +93,7 @@ const errorLink = onError(({ response, graphQLErrors, networkError }) => {
   if (networkError) {
     console.log(`[Network error]: ${networkError}`);
   }
-  console.log("response", response);
+
   if (response) {
     response.errors = undefined;
   }
