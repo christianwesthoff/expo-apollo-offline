@@ -77,32 +77,24 @@ const link = ApolloLink.split(
   )
 );
 
-const errorLink = onError(
-  ({ response, graphQLErrors, networkError, operation: gqlOperation }) => {
-    if (graphQLErrors) {
-      console.log(graphQLErrors);
-      graphQLErrors.map(({ message, locations, path }) =>
-        console.log(
-          `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
-        )
-      );
-    }
-
-    if (networkError) {
-      console.log(gqlOperation);
-      const { kind, operation } = getMainDefinition(gqlOperation.query) as any;
-      if (kind === "OperationDefinition" && operation === "subscription") {
-        console.log(gqlOperation);
-      }
-
-      console.log(`[Network error]: ${networkError}`);
-    }
-    console.log("response", response);
-    if (response) {
-      response.errors = undefined;
-    }
+const errorLink = onError(({ response, graphQLErrors, networkError }) => {
+  if (graphQLErrors) {
+    console.log(graphQLErrors);
+    graphQLErrors.map(({ message, locations, path }) =>
+      console.log(
+        `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
+      )
+    );
   }
-);
+
+  if (networkError) {
+    console.log(`[Network error]: ${networkError}`);
+  }
+  console.log("response", response);
+  if (response) {
+    response.errors = undefined;
+  }
+});
 
 const cache = new InMemoryCache();
 const getStorage = () =>
