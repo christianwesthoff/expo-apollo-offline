@@ -39,13 +39,15 @@ export type OfflineMutationHookOptions<
 > = MutationHookOptions<TData, TVariables> & {
   offlineUpdate?: OfflineMutationUpdateOptions<any, any, TVariables, any>[];
   offlineReturn?: (
-    variables?: TVariables,
-    fetchResult?: Promise<
-      FetchResult<TData, Record<string, any>, Record<string, any>>
-    >
+    variables?: TVariables
   ) =>
     | Promise<FetchResult<TData, Record<string, any>, Record<string, any>>>
     | FetchResult<TData, Record<string, any>, Record<string, any>>;
+  offlineSubscribe?: (
+    fetchResult: Promise<
+      FetchResult<TData, Record<string, any>, Record<string, any>>
+    >
+  ) => void | Promise<void>;
 };
 
 export function useOfflineMutation<
@@ -118,7 +120,11 @@ export function useOfflineMutation<
         if (errors.length) {
           setOfflineErrors(errors);
         }
-        return options.offlineReturn(mutationVariables, fetchResult(options1));
+        const result = fetchResult(options1);
+        if (options?.offlineSubscribe) {
+          await options?.offlineSubscribe(result);
+        }
+        return options.offlineReturn(mutationVariables);
       }
       return fetchResult(options1);
     },
