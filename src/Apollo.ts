@@ -21,7 +21,7 @@ import persistedFailedOperations, {
   PersistedOperationQueue,
 } from "./extensions/persistedFailedOperations";
 import { PersistedData } from "apollo3-cache-persist/lib/types";
-import { ExpireableStorageAdapter } from "./extensions/expire-store";
+import { ExpireableStorageAdapter } from "./extensions/expireableStorageAdapter";
 
 const endpoint = "emerging-crayfish-72.hasura.app/v1";
 const host = `https://${endpoint}/graphql`;
