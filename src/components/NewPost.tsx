@@ -17,21 +17,23 @@ const NewPost: React.FC = () => {
         }),
       },
     ],
-    offlineReturn: (variables) => {
-      return {
-        data: {
-          insert_posts: {
-            affected_rows: 1,
-            __typename: "posts_mutation_response",
+    offlineReturn: {
+      createResponse: (variables) => {
+        return {
+          data: {
+            insert_posts: {
+              affected_rows: 1,
+              __typename: "posts_mutation_response",
+            },
           },
-        },
-        variables,
-      };
+          variables,
+        };
+      },
+      statusSubscribe: (fetchResult, error) =>
+        !error
+          ? console.log("DONE SUBMITTING UPDATE!", fetchResult)
+          : console.error(error),
     },
-    statusSubscribe: (fetchResult, error) =>
-      !error
-        ? console.log("DONE SUBMITTING UPDATE!", fetchResult)
-        : console.error(error),
   });
   const [text, setText] = useState("");
 

@@ -16,7 +16,7 @@ import {
   getDocumentType,
 } from "../extensions/graphql-utils";
 
-export interface OfflineMutationUpdateOptions<
+export interface OfflineUpdateOptions<
   TQueryData = any,
   TQueryVariables = any,
   TMutationVariables = any,
@@ -33,12 +33,11 @@ export interface OfflineMutationUpdateOptions<
   additionalVariables?: TAdditionalVariables;
 }
 
-export type OfflineMutationHookOptions<
+export interface OfflineResponseOptions<
   TData = any,
   TVariables = OperationVariables
-> = MutationHookOptions<TData, TVariables> & {
-  offlineUpdate?: OfflineMutationUpdateOptions<any, any, TVariables, any>[];
-  offlineReturn?: (
+> {
+  createResponse: (
     variables?: TVariables
   ) =>
     | Promise<FetchResult<TData, Record<string, any>, Record<string, any>>>
@@ -47,6 +46,14 @@ export type OfflineMutationHookOptions<
     result?: FetchResult<TData, Record<string, any>, Record<string, any>>,
     error?: string
   ) => void | Promise<void>;
+}
+
+export type OfflineMutationHookOptions<
+  TData = any,
+  TVariables = OperationVariables
+> = MutationHookOptions<TData, TVariables> & {
+  offlineUpdate?: OfflineUpdateOptions<any, any, TVariables, any>[];
+  offlineReturn?: OfflineResponseOptions<TData, TVariables>;
 };
 
 export function useOfflineMutation<
@@ -116,17 +123,18 @@ export function useOfflineMutation<
         );
       }
       if (options?.offlineReturn) {
+        const offlineReturn = options?.offlineReturn;
         if (errors.length) {
           setOfflineErrors(errors);
         }
         const fetch = fetchResult(options1);
-        if (options?.statusSubscribe) {
-          const subscriber = options?.statusSubscribe;
+        if (offlineReturn?.statusSubscribe) {
+          const subscriber = offlineReturn?.statusSubscribe;
           fetch
             .then((result) => subscriber(result))
             .catch((error) => subscriber(undefined, error));
         }
-        return options.offlineReturn(mutationVariables);
+        return offlineReturn.createResponse(mutationVariables);
       }
       return fetchResult(options1);
     },
