@@ -104,13 +104,16 @@ const getStorage = () =>
     ? window.localStorage
     : AsyncStorage;
 
+let gcTimeout;
 export const initApolloClient = (
   client: ApolloClient<NormalizedCacheObject>
 ) => {
   const storage = getStorage();
+  const { cache } = client;
+  gcTimeout = setTimeout(() => cache.gc(), 5000);
   return Promise.all([
     persistedApolloCache({
-      cache: client.cache,
+      cache,
       storage: new ExpireableStorageAdapter(storage, () => {
         const tmrw = new Date(Date.now());
         tmrw.setDate(tmrw.getDate() + 1);

@@ -12,7 +12,11 @@ const NewPost: React.FC = () => {
         updateQuery: (data, variables) => ({
           posts: [
             ...(data?.posts || []),
-            { __typename: "posts", id: uuidv4(), text: variables?.text },
+            {
+              __typename: "posts",
+              id: `optimistic-${uuidv4()}`,
+              text: variables?.text,
+            },
           ],
         }),
       },
