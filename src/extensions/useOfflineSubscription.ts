@@ -18,7 +18,7 @@ export function useOfflineSubscription<
   const query = useMemo(() => changeDocumentType(subscription, "query")!, [
     subscription,
   ]);
-  const useQueryResult = useQuery(query, {
+  const useQueryResult = useQuery<TData, TVariables>(query, {
     ...options,
     fetchPolicy: "cache-only",
   });
