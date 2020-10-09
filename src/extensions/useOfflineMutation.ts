@@ -43,10 +43,9 @@ export type OfflineMutationHookOptions<
   ) =>
     | Promise<FetchResult<TData, Record<string, any>, Record<string, any>>>
     | FetchResult<TData, Record<string, any>, Record<string, any>>;
-  offlineSubscribe?: (
-    fetchResult: Promise<
-      FetchResult<TData, Record<string, any>, Record<string, any>>
-    >
+  statusSubscribe?: (
+    result?: FetchResult<TData, Record<string, any>, Record<string, any>>,
+    error?: string
   ) => void | Promise<void>;
 };
 
@@ -120,9 +119,12 @@ export function useOfflineMutation<
         if (errors.length) {
           setOfflineErrors(errors);
         }
-        const result = fetchResult(options1);
-        if (options?.offlineSubscribe) {
-          await options?.offlineSubscribe(result);
+        const fetch = fetchResult(options1);
+        if (options?.statusSubscribe) {
+          const subscriber = options?.statusSubscribe;
+          fetch
+            .then((result) => subscriber(result))
+            .catch((error) => subscriber(undefined, error));
         }
         return options.offlineReturn(mutationVariables);
       }

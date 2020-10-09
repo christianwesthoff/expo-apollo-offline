@@ -18,10 +18,20 @@ const NewPost: React.FC = () => {
       },
     ],
     offlineReturn: (variables) => {
-      return { data: variables };
+      return {
+        data: {
+          insert_posts: {
+            affected_rows: 1,
+            __typename: "posts_mutation_response",
+          },
+        },
+        variables,
+      };
     },
-    statusSubscribe: (fetchResult) =>
-      fetchResult?.then(() => console.log("DONE SUBMITTING UPDATE!")),
+    statusSubscribe: (fetchResult, error) =>
+      !error
+        ? console.log("DONE SUBMITTING UPDATE!", fetchResult)
+        : console.error(error),
   });
   const [text, setText] = useState("");
 
@@ -29,7 +39,7 @@ const NewPost: React.FC = () => {
     var response = await addPost({
       variables: { text },
     });
-    console.log(response);
+    console.log("OPTIMISTIC RESPONSE!", response);
     setText("");
   };
   return (
