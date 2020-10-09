@@ -41,13 +41,15 @@ class OperationAdapter implements Persistable<PersistedOperationQueue> {
     private apolloClient: ApolloClient<NormalizedCacheObject>
   ) {}
   public extract() {
-    return this.manager.getQueue().map((request) => {
+    const elementsToCache = this.manager.getQueue().map((request) => {
       const { query, variables } = request.getOperation();
       return {
         operation: { query: getDocumentBody(query)!, variables },
         timestamp: request.getTimestamp(),
       };
     });
+    if (!elementsToCache.length) return null;
+    return elementsToCache;
   }
   public restore(data: PersistedOperationQueue) {
     if (!data || !data.length) return;

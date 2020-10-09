@@ -20,7 +20,7 @@ export interface PersistorOptions<T> {
 }
 
 export interface Persistable<T> {
-  extract: () => T;
+  extract: () => T | null;
   restore: (data: T) => void;
 }
 
